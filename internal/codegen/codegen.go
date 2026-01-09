@@ -179,6 +179,7 @@ func (g *Generator) Generate(prog *parser.Program) (string, error) {
 	g.writeln("#include <cmath>")
 	g.writeln("#include <numeric>")
 	g.writeln("#include <random>")
+	g.writeln("#include <filesystem>")
 	// For networking - use POSIX sockets (available on Linux)
 	g.writeln("#include <sys/socket.h>")
 	g.writeln("#include <netinet/in.h>")
@@ -701,6 +702,27 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 				if len(args) == 1 {
 					return fmt.Sprintf("(std::begin(%s) == std::end(%s))", args[0], args[0])
 				}
+			// Time functions
+			case "now":
+				if len(args) == 0 {
+					return `[&]() { auto now = std::chrono::system_clock::now(); auto time = std::chrono::system_clock::to_time_t(now); std::ostringstream oss; oss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S"); return oss.str(); }()`
+				}
+			case "timestamp":
+				if len(args) == 0 {
+					return `std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count()`
+				}
+			case "sleep":
+				if len(args) == 1 {
+					return fmt.Sprintf(`[&]() { std::this_thread::sleep_for(std::chrono::milliseconds(%s)); return 0; }()`, args[0])
+				}
+			case "date":
+				if len(args) == 0 {
+					return `[&]() { auto now = std::chrono::system_clock::now(); auto time = std::chrono::system_clock::to_time_t(now); std::ostringstream oss; oss << std::put_time(std::localtime(&time), "%Y-%m-%d"); return oss.str(); }()`
+				}
+			case "time":
+				if len(args) == 0 {
+					return `[&]() { auto now = std::chrono::system_clock::now(); auto time = std::chrono::system_clock::to_time_t(now); std::ostringstream oss; oss << std::put_time(std::localtime(&time), "%H:%M:%S"); return oss.str(); }()`
+				}
 			// Random
 			case "random":
 				if len(args) == 0 {
@@ -708,6 +730,39 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 				}
 				if len(args) == 2 {
 					return fmt.Sprintf(`[&]() { static std::mt19937 gen(std::random_device{}()); std::uniform_int_distribution<> dis(%s, %s); return dis(gen); }()`, args[0], args[1])
+				}
+			// File system functions
+			case "exists":
+				if len(args) == 1 {
+					return fmt.Sprintf(`std::filesystem::exists(%s)`, args[0])
+				}
+			case "isfile":
+				if len(args) == 1 {
+					return fmt.Sprintf(`std::filesystem::is_regular_file(%s)`, args[0])
+				}
+			case "isdir":
+				if len(args) == 1 {
+					return fmt.Sprintf(`std::filesystem::is_directory(%s)`, args[0])
+				}
+			case "filesize":
+				if len(args) == 1 {
+					return fmt.Sprintf(`static_cast<long>(std::filesystem::file_size(%s))`, args[0])
+				}
+			case "listdir":
+				if len(args) == 1 {
+					return fmt.Sprintf(`[&]() { std::vector<std::string> result; for (const auto& entry : std::filesystem::directory_iterator(%s)) { result.push_back(entry.path().filename().string()); } return result; }()`, args[0])
+				}
+			case "basename":
+				if len(args) == 1 {
+					return fmt.Sprintf(`std::filesystem::path(%s).filename().string()`, args[0])
+				}
+			case "dirname":
+				if len(args) == 1 {
+					return fmt.Sprintf(`std::filesystem::path(%s).parent_path().string()`, args[0])
+				}
+			case "extension":
+				if len(args) == 1 {
+					return fmt.Sprintf(`std::filesystem::path(%s).extension().string()`, args[0])
 				}
 			}
 		}
@@ -726,6 +781,12 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 		return g.genReadFile(e)
 	case parser.Ask:
 		return g.genAsk(e)
+	case parser.Now:
+		return `[&]() { auto now = std::chrono::system_clock::now(); auto time = std::chrono::system_clock::to_time_t(now); std::ostringstream oss; oss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S"); return oss.str(); }()`
+	case parser.Today:
+		return `[&]() { auto now = std::chrono::system_clock::now(); auto time = std::chrono::system_clock::to_time_t(now); std::ostringstream oss; oss << std::put_time(std::localtime(&time), "%Y-%m-%d"); return oss.str(); }()`
+	case parser.Clock:
+		return `[&]() { auto now = std::chrono::system_clock::now(); auto time = std::chrono::system_clock::to_time_t(now); std::ostringstream oss; oss << std::put_time(std::localtime(&time), "%H:%M:%S"); return oss.str(); }()`
 	case parser.EnvVar:
 		return g.genEnvVar(e)
 	case parser.RunCommand:

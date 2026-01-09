@@ -63,6 +63,9 @@ const (
 	// I/O keywords
 	SAY    // print
 	ASK    // read from stdin
+	NOW    // current datetime
+	TODAY  // current date
+	CLOCK  // current time
 	READ   // read file
 	WRITE  // write file
 	APPEND // append file
@@ -159,7 +162,8 @@ var keywords = map[string]TokenType{
 	// Boolean
 	"and": AND, "or": OR, "not": NOT, "yes": YES, "no": NO,
 	// I/O
-	"say": SAY, "ask": ASK, "read": READ, "write": WRITE, "append": APPEND,
+	"say": SAY, "ask": ASK, "now": NOW, "today": TODAY, "clock": CLOCK,
+	"read": READ, "write": WRITE, "append": APPEND,
 	"env": ENV, "run": RUN, "open": OPEN,
 	// Advanced
 	"where": WHERE, "then": THEN, "using": USING, "from": FROM,

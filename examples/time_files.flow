@@ -1,0 +1,54 @@
+// time_files.flow - Time and filesystem demo
+
+to start:
+    say "=== Time Functions ==="
+    say "Current datetime:"
+    say now
+    say "Date only:"
+    say today
+    say "Time only:"
+    say clock
+
+    say ""
+    say "=== Filesystem Functions ==="
+
+    // Check paths
+    path is "/etc/hostname"
+    say "Checking /etc/hostname:"
+
+    if exists path:
+        say "  exists: yes"
+
+    if isfile path:
+        say "  is file: yes"
+
+    sz is filesize path
+    say "  size:"
+    say sz
+
+    bn is basename path
+    say "  basename:"
+    say bn
+
+    dn is dirname path
+    say "  dirname:"
+    say dn
+
+    ext is extension "/opt/flow/hello.flow"
+    say "  extension of hello.flow:"
+    say ext
+
+    // Check directory
+    if isdir "/etc":
+        say ""
+        say "/etc is a directory: yes"
+
+    // List directory
+    say ""
+    say "First 5 items in /etc:"
+    items is listdir "/etc"
+    count is 0, can change
+    for each item in items:
+        if count < 5:
+            say item
+        count becomes count + 1

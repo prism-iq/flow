@@ -406,6 +406,21 @@ type Ask struct {
 
 func (Ask) expr() {}
 
+// Now represents current datetime.
+type Now struct{}
+
+func (Now) expr() {}
+
+// Today represents current date.
+type Today struct{}
+
+func (Today) expr() {}
+
+// Clock represents current time.
+type Clock struct{}
+
+func (Clock) expr() {}
+
 // EnvVar represents environment variable access.
 type EnvVar struct {
 	Name Expression
@@ -1533,6 +1548,18 @@ func (p *Parser) parsePrimary() (Expression, error) {
 			}
 		}
 		return Ask{Prompt: prompt}, nil
+
+	case lexer.NOW:
+		p.advance()
+		return Now{}, nil
+
+	case lexer.TODAY:
+		p.advance()
+		return Today{}, nil
+
+	case lexer.CLOCK:
+		p.advance()
+		return Clock{}, nil
 
 	case lexer.ENV:
 		p.advance()

@@ -130,6 +130,27 @@ to start:
 | `random` | Random float 0.0-1.0 |
 | `random 1 100` | Random int in range |
 
+### Time Functions
+
+| Flow | Description |
+|------|-------------|
+| `now` | Current datetime (YYYY-MM-DD HH:MM:SS) |
+| `today` | Current date (YYYY-MM-DD) |
+| `clock` | Current time (HH:MM:SS) |
+
+### Filesystem Functions
+
+| Flow | Description |
+|------|-------------|
+| `exists path` | Check if path exists |
+| `isfile path` | Check if path is a file |
+| `isdir path` | Check if path is a directory |
+| `filesize path` | Get file size in bytes |
+| `listdir path` | List directory contents |
+| `basename path` | Get filename from path |
+| `dirname path` | Get directory from path |
+| `extension path` | Get file extension |
+
 ### Variables & Assignment
 
 | Flow | C++ |
