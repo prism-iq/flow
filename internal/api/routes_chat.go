@@ -1,6 +1,7 @@
 package api
 
 import (
+	"io"
 	"net/http"
 
 	"flow/internal/config"
@@ -52,7 +53,7 @@ func (h *chatHandler) sendMessage(c *gin.Context) {
 		return
 	}
 
-	userMsg := models.NewMessage(models.RoleUser, req.Message)
+	_ = models.NewMessage(models.RoleUser, req.Message)
 
 	var context string
 	if req.UseRAG {
@@ -108,7 +109,7 @@ func (h *chatHandler) streamMessage(c *gin.Context) {
 		close(tokenChan)
 	}()
 
-	c.Stream(func(w gin.ResponseWriter) bool {
+	c.Stream(func(w io.Writer) bool {
 		select {
 		case token, ok := <-tokenChan:
 			if !ok {
