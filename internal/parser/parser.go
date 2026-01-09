@@ -207,6 +207,23 @@ type List struct {
 
 func (List) expr() {}
 
+type ListComprehension struct {
+	Expr      Expression // The expression to evaluate for each item
+	Var       string     // Loop variable name
+	Start     Expression // Collection or range start
+	End       Expression // Range end (nil for collection iteration)
+	Condition Expression // Optional filter condition (where clause)
+}
+
+func (ListComprehension) expr() {}
+
+type Pipe struct {
+	Left  Expression
+	Right Expression // Function name to apply
+}
+
+func (Pipe) expr() {}
+
 // Parser
 
 type Parser struct {
@@ -635,7 +652,25 @@ func (p *Parser) parseIdentStatement() (Statement, error) {
 // Expression parsing with precedence
 
 func (p *Parser) parseExpression() (Expression, error) {
-	return p.parseOr()
+	return p.parsePipe()
+}
+
+func (p *Parser) parsePipe() (Expression, error) {
+	left, err := p.parseOr()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(lexer.PIPE) {
+		// The right side should be a function name (identifier)
+		right, err := p.parseOr()
+		if err != nil {
+			return nil, err
+		}
+		left = Pipe{Left: left, Right: right}
+	}
+
+	return left, nil
 }
 
 func (p *Parser) parseOr() (Expression, error) {
@@ -886,19 +921,74 @@ func (p *Parser) parsePrimary() (Expression, error) {
 func (p *Parser) parseList() (Expression, error) {
 	p.advance() // consume '['
 
-	var elements []Expression
-	if !p.check(lexer.RBRACKET) {
-		for {
-			elem, err := p.parseExpression()
+	// Empty list
+	if p.match(lexer.RBRACKET) {
+		return List{Elements: []Expression{}}, nil
+	}
+
+	// Parse first expression
+	first, err := p.parseOr() // Use parseOr to avoid consuming 'for' keyword
+	if err != nil {
+		return nil, err
+	}
+
+	// Check for list comprehension: [expr for each var in ...]
+	if p.match(lexer.FOR) {
+		if !p.match(lexer.EACH) {
+			return nil, p.error("expected 'each' after 'for' in list comprehension")
+		}
+
+		varName := p.current().Value
+		if !p.match(lexer.IDENT) {
+			return nil, p.error("expected variable name in list comprehension")
+		}
+
+		if !p.match(lexer.IN) {
+			return nil, p.error("expected 'in' after variable in list comprehension")
+		}
+
+		start, err := p.parseOr()
+		if err != nil {
+			return nil, err
+		}
+
+		var end Expression
+		if p.match(lexer.TO) {
+			end, err = p.parseOr()
 			if err != nil {
 				return nil, err
 			}
-			elements = append(elements, elem)
+		}
 
-			if !p.match(lexer.COMMA) {
-				break
+		var condition Expression
+		if p.match(lexer.WHERE) {
+			condition, err = p.parseOr()
+			if err != nil {
+				return nil, err
 			}
 		}
+
+		if !p.match(lexer.RBRACKET) {
+			return nil, p.error("expected ']' at end of list comprehension")
+		}
+
+		return ListComprehension{
+			Expr:      first,
+			Var:       varName,
+			Start:     start,
+			End:       end,
+			Condition: condition,
+		}, nil
+	}
+
+	// Regular list
+	elements := []Expression{first}
+	for p.match(lexer.COMMA) {
+		elem, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		elements = append(elements, elem)
 	}
 
 	if !p.match(lexer.RBRACKET) {

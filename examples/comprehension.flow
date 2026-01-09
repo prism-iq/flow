@@ -1,0 +1,14 @@
+// comprehension.flow - List comprehension example
+
+to start:
+    // Range-based comprehension
+    squares is [x * x for each x in 1 to 5]
+    say "Squares:"
+    for each n in squares:
+        say n
+
+    // With filter (where clause)
+    evens is [x for each x in 1 to 10 where x % 2 == 0]
+    say "Even numbers:"
+    for each n in evens:
+        say n

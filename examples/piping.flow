@@ -1,0 +1,16 @@
+// piping.flow - Piping/chaining example
+
+to twice n:
+    return n * 2
+
+to square n:
+    return n * n
+
+to start:
+    // Basic piping: value | function
+    result is 5 | twice
+    say result
+
+    // Chained piping: 5 | twice | square = square(twice(5)) = square(10) = 100
+    chained is 5 | twice | square
+    say chained

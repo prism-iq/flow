@@ -41,6 +41,7 @@ func (g *Generator) Generate(prog *parser.Program) (string, error) {
 	g.writeln("#include <iostream>")
 	g.writeln("#include <string>")
 	g.writeln("#include <vector>")
+	g.writeln("#include <type_traits>")
 	g.writeln("")
 
 	// Generate structs with methods
@@ -277,9 +278,66 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 			elems = append(elems, g.genExpr(elem))
 		}
 		return fmt.Sprintf("{%s}", strings.Join(elems, ", "))
+	case parser.ListComprehension:
+		return g.genListComprehension(e)
+	case parser.Pipe:
+		return g.genPipe(e)
 	default:
 		return "/* unknown expr */"
 	}
+}
+
+func (g *Generator) genListComprehension(lc parser.ListComprehension) string {
+	// Generate an immediately-invoked lambda that builds a vector
+	// Use a two-pass approach: first create empty vector, loop to fill it, return
+	// For range-based (1 to 10): use int
+	// For collection-based: deduce from collection's value_type
+
+	var sb strings.Builder
+	sb.WriteString("[&]() { ")
+
+	exprStr := g.genExpr(lc.Expr)
+
+	if lc.End != nil {
+		// Range-based: for each x in 1 to 10
+		// We know x is int, so we can deduce result type after first iteration
+		start := g.genExpr(lc.Start)
+		end := g.genExpr(lc.End)
+		// Use int as loop variable, auto for result element type
+		sb.WriteString("std::vector<int> _result; ")
+		sb.WriteString(fmt.Sprintf("for (int %s = %s; %s <= %s; %s++) { ", lc.Var, start, lc.Var, end, lc.Var))
+	} else {
+		// Collection-based: for each x in items
+		collection := g.genExpr(lc.Start)
+		// Use auto-deduction
+		sb.WriteString("std::vector<std::decay_t<decltype(*std::begin(")
+		sb.WriteString(collection)
+		sb.WriteString("))>> _result; ")
+		sb.WriteString(fmt.Sprintf("for (const auto& %s : %s) { ", lc.Var, collection))
+	}
+
+	if lc.Condition != nil {
+		sb.WriteString(fmt.Sprintf("if (%s) { ", g.genExpr(lc.Condition)))
+		sb.WriteString(fmt.Sprintf("_result.push_back(%s); ", exprStr))
+		sb.WriteString("} ")
+	} else {
+		sb.WriteString(fmt.Sprintf("_result.push_back(%s); ", exprStr))
+	}
+
+	sb.WriteString("} return _result; }()")
+
+	return sb.String()
+}
+
+func (g *Generator) genPipe(pipe parser.Pipe) string {
+	// items | double | sum → sum(double(items))
+	// Recursively handle nested pipes
+	left := g.genExpr(pipe.Left)
+	right := g.genExpr(pipe.Right)
+
+	// If right is just a function name (Ident), call it with left as argument
+	// If right is already a call, this gets more complex - for now assume it's a simple function name
+	return fmt.Sprintf("%s(%s)", right, left)
 }
 
 func (g *Generator) flowTypeToCpp(t string) string {

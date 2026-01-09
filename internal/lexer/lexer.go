@@ -50,6 +50,8 @@ const (
 	AS
 	MY
 	AT
+	WHERE
+	THEN
 
 	// Operators
 	PLUS
@@ -74,6 +76,7 @@ const (
 	RBRACE
 	COLON
 	COMMA
+	PIPE
 )
 
 var keywords = map[string]TokenType{
@@ -104,6 +107,8 @@ var keywords = map[string]TokenType{
 	"as":        AS,
 	"my":        MY,
 	"at":        AT,
+	"where":     WHERE,
+	"then":      THEN,
 }
 
 type Token struct {
@@ -241,6 +246,9 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 			l.advance()
 		case ch == ',':
 			l.emit(COMMA, ",")
+			l.advance()
+		case ch == '|':
+			l.emit(PIPE, "|")
 			l.advance()
 
 		default:

@@ -1,6 +1,6 @@
 # Claude Context - Flow Programming Language
 
-**Version:** 0.4.0 (Full Local - No API)
+**Version:** 0.5.0 (Full Local - No API)
 **Repository:** https://github.com/prism-iq/flow
 
 ---
@@ -61,6 +61,9 @@ hello.flow → [Parser] → [AST] → [Codegen] → hello.cpp → [g++] → ./he
 | `wait fetch url` | async/await |
 | `do together:` | concurrent execution |
 | `on heap` | heap allocation |
+| `[x*2 for each x in items]` | list comprehension |
+| `[x for each x in 1 to 10 where x > 5]` | filtered comprehension |
+| `value \| func` | piping (func(value)) |
 
 ---
 
@@ -168,6 +171,28 @@ if (age >= 18) {
 }
 ```
 
+### List Comprehensions
+
+```flow
+squares is [x * x for each x in 1 to 5]
+evens is [x for each x in 1 to 10 where x % 2 == 0]
+```
+→
+```cpp
+auto squares = /* lambda building vector */;  // [1, 4, 9, 16, 25]
+auto evens = /* lambda with filter */;        // [2, 4, 6, 8, 10]
+```
+
+### Piping
+
+```flow
+result is 5 | twice | square
+```
+→
+```cpp
+auto result = square(twice(5));
+```
+
 ---
 
 ## Entry Point
@@ -220,7 +245,7 @@ flow show hello.flow     # Show generated C++
 
 ## TL;DR for Flow Syntax
 
-Flow v0.4 uses natural English:
+Flow v0.5 uses natural English:
 - `name is "x"` = assignment
 - `x becomes y` = reassignment
 - `to do something:` = function
@@ -234,6 +259,8 @@ Flow v0.4 uses natural English:
 - `and/or/not` = &&/||/!
 - `say` = print
 - `{x}` = interpolation
+- `[expr for each x in items]` = list comprehension
+- `value | func` = piping
 
 **Generates valid C++20.**
 
