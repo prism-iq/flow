@@ -365,6 +365,10 @@ func (g *Generator) genStatement(stmt parser.Statement) {
 		g.genReturn(s)
 	case parser.Say:
 		g.genSay(s)
+	case parser.Print:
+		g.genPrint(s)
+	case parser.Pause:
+		g.genPause(s)
 	case parser.Assignment:
 		g.genAssignment(s)
 	case parser.Reassign:
@@ -475,6 +479,14 @@ func (g *Generator) genReturn(s parser.Return) {
 
 func (g *Generator) genSay(s parser.Say) {
 	g.writeln("std::cout << %s << std::endl;", g.genExpr(s.Value))
+}
+
+func (g *Generator) genPrint(s parser.Print) {
+	g.writeln("std::cout << %s << std::flush;", g.genExpr(s.Value))
+}
+
+func (g *Generator) genPause(s parser.Pause) {
+	g.writeln("std::this_thread::sleep_for(std::chrono::milliseconds(%s));", g.genExpr(s.Milliseconds))
 }
 
 func (g *Generator) genAssignment(s parser.Assignment) {

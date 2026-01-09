@@ -252,9 +252,13 @@ result is 5 | double | square
 
 ```flow
 // Console
-say "Hello World"
+say "Hello World"               // with newline
+print "Loading..."              // without newline
 name is ask "Enter name: "
 input is ask                    // no prompt
+
+// Timing
+pause 1000                      // sleep 1 second (milliseconds)
 
 // Files
 content is read "file.txt"

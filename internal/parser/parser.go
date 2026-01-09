@@ -145,12 +145,26 @@ func (Stop) stmt() {}
 
 // -------------------- I/O Statements --------------------
 
-// Say represents a print statement.
+// Say represents a print statement with newline.
 type Say struct {
 	Value Expression
 }
 
 func (Say) stmt() {}
+
+// Print represents a print statement without newline.
+type Print struct {
+	Value Expression
+}
+
+func (Print) stmt() {}
+
+// Pause represents a sleep/delay statement.
+type Pause struct {
+	Milliseconds Expression
+}
+
+func (Pause) stmt() {}
 
 // WriteFile represents file writing.
 type WriteFile struct {
@@ -782,6 +796,10 @@ func (p *Parser) parseStatement() (Statement, error) {
 	// I/O
 	case lexer.SAY:
 		return p.parseSay()
+	case lexer.PRINT:
+		return p.parsePrint()
+	case lexer.PAUSE:
+		return p.parsePause()
 	case lexer.WRITE:
 		return p.parseWriteFile(false)
 	case lexer.APPEND:
@@ -992,6 +1010,24 @@ func (p *Parser) parseSay() (Statement, error) {
 		return nil, err
 	}
 	return Say{Value: val}, nil
+}
+
+func (p *Parser) parsePrint() (Statement, error) {
+	p.advance()
+	val, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	return Print{Value: val}, nil
+}
+
+func (p *Parser) parsePause() (Statement, error) {
+	p.advance()
+	val, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	return Pause{Milliseconds: val}, nil
 }
 
 func (p *Parser) parseWriteFile(appendMode bool) (Statement, error) {

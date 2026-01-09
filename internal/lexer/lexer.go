@@ -61,11 +61,13 @@ const (
 	NO  // false
 
 	// I/O keywords
-	SAY    // print
+	SAY    // print with newline
+	PRINT  // print without newline
 	ASK    // read from stdin
 	NOW    // current datetime
 	TODAY  // current date
 	CLOCK  // current time
+	PAUSE  // sleep milliseconds
 	READ   // read file
 	WRITE  // write file
 	APPEND // append file
@@ -162,7 +164,8 @@ var keywords = map[string]TokenType{
 	// Boolean
 	"and": AND, "or": OR, "not": NOT, "yes": YES, "no": NO,
 	// I/O
-	"say": SAY, "ask": ASK, "now": NOW, "today": TODAY, "clock": CLOCK,
+	"say": SAY, "print": PRINT, "ask": ASK, "pause": PAUSE,
+	"now": NOW, "today": TODAY, "clock": CLOCK,
 	"read": READ, "write": WRITE, "append": APPEND,
 	"env": ENV, "run": RUN, "open": OPEN,
 	// Advanced
