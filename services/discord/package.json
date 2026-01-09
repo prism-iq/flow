@@ -1,0 +1,21 @@
+{
+  "name": "flow-discord-bot",
+  "version": "1.0.0",
+  "description": "Discord bot interface for Flow chatbot",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "deploy": "node src/deploy-commands.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.0",
+    "undici": "^6.2.0",
+    "pino": "^8.17.0",
+    "pino-pretty": "^10.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

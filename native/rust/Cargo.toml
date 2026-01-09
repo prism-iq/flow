@@ -1,0 +1,30 @@
+[package]
+name = "flow_parser"
+version = "1.0.0"
+edition = "2021"
+authors = ["Flow Team"]
+description = "High-performance parser for Flow chatbot"
+
+[lib]
+name = "flow_parser"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+rayon = "1.8"
+regex = "1.10"
+unicode-segmentation = "1.10"
+tokenizers = "0.15"
+tiktoken-rs = "0.5"
+
+[features]
+default = ["simd"]
+simd = []
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+opt-level = 3

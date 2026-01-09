@@ -1,0 +1,80 @@
+# Binaries
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go
+vendor/
+
+# Node
+node_modules/
+.npm/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+*.egg-info/
+dist/
+
+# Rust
+target/
+Cargo.lock
+
+# C++
+build/
+*.o
+*.a
+
+# Frontend
+frontend/build/
+frontend/.svelte-kit/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Models
+model_cache/
+*.bin
+*.gguf
+*.safetensors
+
+# Data
+data/
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage/
+.coverage
+htmlcov/
+
+# Docker
+.docker/
+
+# Secrets
+*.pem
+*.key
+credentials.json
