@@ -399,6 +399,13 @@ type ReadFile struct {
 
 func (ReadFile) expr() {}
 
+// Ask represents reading from stdin with optional prompt.
+type Ask struct {
+	Prompt Expression // optional prompt to display
+}
+
+func (Ask) expr() {}
+
 // EnvVar represents environment variable access.
 type EnvVar struct {
 	Name Expression
@@ -1514,6 +1521,19 @@ func (p *Parser) parsePrimary() (Expression, error) {
 		}
 		return ReadFile{Path: path}, nil
 
+	case lexer.ASK:
+		p.advance()
+		// Optional prompt
+		var prompt Expression
+		if p.isExprStart() {
+			var err error
+			prompt, err = p.parseArgument()
+			if err != nil {
+				return nil, err
+			}
+		}
+		return Ask{Prompt: prompt}, nil
+
 	case lexer.ENV:
 		p.advance()
 		name, err := p.parseArgument()
@@ -1866,6 +1886,17 @@ func (p *Parser) advance() {
 
 func (p *Parser) check(t lexer.TokenType) bool {
 	return p.current().Type == t
+}
+
+// isExprStart returns true if the current token could start an expression
+func (p *Parser) isExprStart() bool {
+	switch p.current().Type {
+	case lexer.IDENT, lexer.INT, lexer.FLOAT, lexer.STRING,
+		lexer.LPAREN, lexer.LBRACKET, lexer.LBRACE,
+		lexer.YES, lexer.NO, lexer.NOT, lexer.MINUS, lexer.A:
+		return true
+	}
+	return false
 }
 
 func (p *Parser) match(t lexer.TokenType) bool {

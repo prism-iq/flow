@@ -62,6 +62,7 @@ const (
 
 	// I/O keywords
 	SAY    // print
+	ASK    // read from stdin
 	READ   // read file
 	WRITE  // write file
 	APPEND // append file
@@ -158,7 +159,7 @@ var keywords = map[string]TokenType{
 	// Boolean
 	"and": AND, "or": OR, "not": NOT, "yes": YES, "no": NO,
 	// I/O
-	"say": SAY, "read": READ, "write": WRITE, "append": APPEND,
+	"say": SAY, "ask": ASK, "read": READ, "write": WRITE, "append": APPEND,
 	"env": ENV, "run": RUN, "open": OPEN,
 	// Advanced
 	"where": WHERE, "then": THEN, "using": USING, "from": FROM,

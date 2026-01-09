@@ -553,6 +553,27 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 		for _, arg := range e.Args {
 			args = append(args, g.genExpr(arg))
 		}
+		// Handle builtin functions
+		if ident, ok := e.Func.(parser.Ident); ok {
+			switch ident.Name {
+			case "to_int":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::stoi(%s)", args[0])
+				}
+			case "to_float":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::stod(%s)", args[0])
+				}
+			case "to_string":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::to_string(%s)", args[0])
+				}
+			case "length":
+				if len(args) == 1 {
+					return fmt.Sprintf("static_cast<int>(%s.size())", args[0])
+				}
+			}
+		}
 		return fmt.Sprintf("%s(%s)", g.genExpr(e.Func), strings.Join(args, ", "))
 	case parser.List:
 		var elems []string
@@ -566,6 +587,8 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 		return g.genPipe(e)
 	case parser.ReadFile:
 		return g.genReadFile(e)
+	case parser.Ask:
+		return g.genAsk(e)
 	case parser.EnvVar:
 		return g.genEnvVar(e)
 	case parser.RunCommand:
@@ -603,6 +626,15 @@ func (g *Generator) genReadFile(rf parser.ReadFile) string {
 	// Read entire file into string using stringstream
 	path := g.genExpr(rf.Path)
 	return fmt.Sprintf("[&]() { std::ifstream _f(%s); std::stringstream _ss; _ss << _f.rdbuf(); return _ss.str(); }()", path)
+}
+
+func (g *Generator) genAsk(a parser.Ask) string {
+	// Read a line from stdin, optionally displaying a prompt first
+	if a.Prompt != nil {
+		prompt := g.genExpr(a.Prompt)
+		return fmt.Sprintf(`[&]() { std::cout << %s; std::string _input; std::getline(std::cin, _input); return _input; }()`, prompt)
+	}
+	return `[&]() { std::string _input; std::getline(std::cin, _input); return _input; }()`
 }
 
 func (g *Generator) genEnvVar(ev parser.EnvVar) string {
