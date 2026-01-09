@@ -176,6 +176,9 @@ func (g *Generator) Generate(prog *parser.Program) (string, error) {
 	g.writeln("#include <iomanip>")
 	g.writeln("#include <stdexcept>")
 	g.writeln("#include <ctime>")
+	g.writeln("#include <cmath>")
+	g.writeln("#include <numeric>")
+	g.writeln("#include <random>")
 	// For networking - use POSIX sockets (available on Linux)
 	g.writeln("#include <sys/socket.h>")
 	g.writeln("#include <netinet/in.h>")
@@ -607,6 +610,104 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 			case "replace_all":
 				if len(args) == 3 {
 					return fmt.Sprintf(`[&]() { std::string s = %s; std::string from = %s; std::string to = %s; size_t pos = 0; while ((pos = s.find(from, pos)) != std::string::npos) { s.replace(pos, from.length(), to); pos += to.length(); } return s; }()`, args[0], args[1], args[2])
+				}
+			// Math functions
+			case "abs":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::abs(%s)", args[0])
+				}
+			case "min":
+				if len(args) == 2 {
+					return fmt.Sprintf("std::min(%s, %s)", args[0], args[1])
+				}
+			case "max":
+				if len(args) == 2 {
+					return fmt.Sprintf("std::max(%s, %s)", args[0], args[1])
+				}
+			case "floor":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::floor(%s)", args[0])
+				}
+			case "ceil":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::ceil(%s)", args[0])
+				}
+			case "round":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::round(%s)", args[0])
+				}
+			case "sqrt":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::sqrt(%s)", args[0])
+				}
+			case "pow":
+				if len(args) == 2 {
+					return fmt.Sprintf("std::pow(%s, %s)", args[0], args[1])
+				}
+			case "sin":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::sin(%s)", args[0])
+				}
+			case "cos":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::cos(%s)", args[0])
+				}
+			case "tan":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::tan(%s)", args[0])
+				}
+			case "log":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::log(%s)", args[0])
+				}
+			case "log10":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::log10(%s)", args[0])
+				}
+			case "exp":
+				if len(args) == 1 {
+					return fmt.Sprintf("std::exp(%s)", args[0])
+				}
+			// List functions
+			case "sum":
+				if len(args) == 1 {
+					return fmt.Sprintf(`[&]() { auto v = %s; return std::accumulate(std::begin(v), std::end(v), 0); }()`, args[0])
+				}
+			case "product":
+				if len(args) == 1 {
+					return fmt.Sprintf(`[&]() { auto v = %s; return std::accumulate(std::begin(v), std::end(v), 1, std::multiplies<int>()); }()`, args[0])
+				}
+			case "reverse":
+				if len(args) == 1 {
+					return fmt.Sprintf(`[&]() { std::vector<int> v(%s); std::reverse(v.begin(), v.end()); return v; }()`, args[0])
+				}
+			case "sort":
+				if len(args) == 1 {
+					return fmt.Sprintf(`[&]() { std::vector<int> v(%s); std::sort(v.begin(), v.end()); return v; }()`, args[0])
+				}
+			case "unique":
+				if len(args) == 1 {
+					return fmt.Sprintf(`[&]() { std::vector<int> v(%s); std::sort(v.begin(), v.end()); v.erase(std::unique(v.begin(), v.end()), v.end()); return v; }()`, args[0])
+				}
+			case "first":
+				if len(args) == 1 {
+					return fmt.Sprintf("*std::begin(%s)", args[0])
+				}
+			case "last":
+				if len(args) == 1 {
+					return fmt.Sprintf("*std::prev(std::end(%s))", args[0])
+				}
+			case "empty":
+				if len(args) == 1 {
+					return fmt.Sprintf("(std::begin(%s) == std::end(%s))", args[0], args[0])
+				}
+			// Random
+			case "random":
+				if len(args) == 0 {
+					return `[&]() { static std::mt19937 gen(std::random_device{}()); static std::uniform_real_distribution<> dis(0.0, 1.0); return dis(gen); }()`
+				}
+				if len(args) == 2 {
+					return fmt.Sprintf(`[&]() { static std::mt19937 gen(std::random_device{}()); std::uniform_int_distribution<> dis(%s, %s); return dis(gen); }()`, args[0], args[1])
 				}
 			}
 		}

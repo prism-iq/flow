@@ -1,0 +1,63 @@
+// math_funcs.flow - Math and list operations demo
+
+to start:
+    say "=== Math Functions Demo ==="
+
+    // Basic math
+    x is -5
+    say "abs(-5) ="
+    say abs x
+
+    a is 10
+    b is 3
+    say "min(10, 3) ="
+    say min a b
+    say "max(10, 3) ="
+    say max a b
+
+    // Float operations
+    pi is 3.14159
+    say "floor(3.14159) ="
+    say floor pi
+    say "ceil(3.14159) ="
+    say ceil pi
+    say "round(3.14159) ="
+    say round pi
+
+    // Powers and roots
+    say "sqrt(16) ="
+    say sqrt 16
+    say "pow(2, 8) ="
+    say pow 2 8
+
+    // List operations
+    say ""
+    say "=== List Functions Demo ==="
+
+    nums is [5, 3, 8, 1, 9, 2]
+    say "Original list: 5, 3, 8, 1, 9, 2"
+
+    say "sum ="
+    say sum nums
+
+    sorted is sort nums
+    say "sorted ="
+    for each n in sorted:
+        say n
+
+    reversed is reverse nums
+    say "reversed ="
+    for each n in reversed:
+        say n
+
+    say "first ="
+    say first nums
+    say "last ="
+    say last nums
+
+    // Random numbers
+    say ""
+    say "=== Random Numbers ==="
+    r is random 1 100
+    say "random(1, 100) ="
+    say r

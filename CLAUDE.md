@@ -91,6 +91,45 @@ to start:
 | `ends_with text "suf"` | Check suffix |
 | `replace_all text "old" "new"` | Replace all occurrences |
 
+### Math Functions
+
+| Flow | Description |
+|------|-------------|
+| `abs x` | Absolute value |
+| `min a b` | Minimum of two values |
+| `max a b` | Maximum of two values |
+| `floor x` | Round down |
+| `ceil x` | Round up |
+| `round x` | Round to nearest |
+| `sqrt x` | Square root |
+| `pow x y` | x to the power y |
+| `sin x` | Sine |
+| `cos x` | Cosine |
+| `tan x` | Tangent |
+| `log x` | Natural logarithm |
+| `log10 x` | Base-10 logarithm |
+| `exp x` | e^x |
+
+### List Functions
+
+| Flow | Description |
+|------|-------------|
+| `sum items` | Sum all elements |
+| `product items` | Multiply all elements |
+| `sort items` | Sort ascending |
+| `reverse items` | Reverse order |
+| `unique items` | Remove duplicates |
+| `first items` | First element |
+| `last items` | Last element |
+| `empty items` | Check if empty |
+
+### Random Numbers
+
+| Flow | Description |
+|------|-------------|
+| `random` | Random float 0.0-1.0 |
+| `random 1 100` | Random int in range |
+
 ### Variables & Assignment
 
 | Flow | C++ |
