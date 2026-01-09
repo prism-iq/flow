@@ -572,6 +572,42 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 				if len(args) == 1 {
 					return fmt.Sprintf("static_cast<int>(std::string(%s).size())", args[0])
 				}
+			case "upper":
+				if len(args) == 1 {
+					return fmt.Sprintf(`[&]() { std::string s = %s; std::transform(s.begin(), s.end(), s.begin(), ::toupper); return s; }()`, args[0])
+				}
+			case "lower":
+				if len(args) == 1 {
+					return fmt.Sprintf(`[&]() { std::string s = %s; std::transform(s.begin(), s.end(), s.begin(), ::tolower); return s; }()`, args[0])
+				}
+			case "trim":
+				if len(args) == 1 {
+					return fmt.Sprintf(`[&]() { std::string s = %s; s.erase(0, s.find_first_not_of(" \t\n\r")); s.erase(s.find_last_not_of(" \t\n\r") + 1); return s; }()`, args[0])
+				}
+			case "split":
+				if len(args) == 2 {
+					return fmt.Sprintf(`[&]() { std::vector<std::string> result; std::string s = %s; std::string delim = %s; size_t pos = 0; while ((pos = s.find(delim)) != std::string::npos) { result.push_back(s.substr(0, pos)); s.erase(0, pos + delim.length()); } result.push_back(s); return result; }()`, args[0], args[1])
+				}
+			case "join":
+				if len(args) == 2 {
+					return fmt.Sprintf(`[&]() { std::string result; auto& items = %s; std::string sep = %s; for (size_t i = 0; i < items.size(); ++i) { if (i > 0) result += sep; result += items[i]; } return result; }()`, args[0], args[1])
+				}
+			case "contains":
+				if len(args) == 2 {
+					return fmt.Sprintf(`(std::string(%s).find(%s) != std::string::npos)`, args[0], args[1])
+				}
+			case "starts_with":
+				if len(args) == 2 {
+					return fmt.Sprintf(`(std::string(%s).rfind(%s, 0) == 0)`, args[0], args[1])
+				}
+			case "ends_with":
+				if len(args) == 2 {
+					return fmt.Sprintf(`[&]() { std::string s = %s; std::string suffix = %s; return s.size() >= suffix.size() && s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0; }()`, args[0], args[1])
+				}
+			case "replace_all":
+				if len(args) == 3 {
+					return fmt.Sprintf(`[&]() { std::string s = %s; std::string from = %s; std::string to = %s; size_t pos = 0; while ((pos = s.find(from, pos)) != std::string::npos) { s.replace(pos, from.length(), to); pos += to.length(); } return s; }()`, args[0], args[1], args[2])
+				}
 			}
 		}
 		return fmt.Sprintf("%s(%s)", g.genExpr(e.Func), strings.Join(args, ", "))

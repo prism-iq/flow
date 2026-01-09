@@ -1,0 +1,46 @@
+// strings.flow - String manipulation demo
+
+to start:
+    say "=== String Manipulation Demo ==="
+
+    // Case conversion
+    text is "Hello World"
+    up is upper text
+    lo is lower text
+    say "Original: Hello World"
+    say up
+    say lo
+
+    // Trim whitespace
+    padded is "  spaces everywhere  "
+    trimmed is trim padded
+    say trimmed
+
+    // Split and join
+    csv is "apple,banana,cherry"
+    parts is split csv ","
+    say "Split result:"
+    for each part in parts:
+        say part
+
+    // Join back together
+    rejoined is join parts " | "
+    say rejoined
+
+    // Contains check
+    if contains text "World":
+        say "Contains World: yes"
+
+    // Starts/ends with
+    filename is "document.pdf"
+    if ends_with filename ".pdf":
+        say "PDF file: yes"
+
+    url is "https://example.com"
+    if starts_with url "https":
+        say "Secure: yes"
+
+    // Replace all
+    message is "foo bar foo baz foo"
+    replaced is replace_all message "foo" "XXX"
+    say replaced

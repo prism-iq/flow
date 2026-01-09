@@ -1,127 +1,40 @@
-# Claude Context - Flow Programming Language
+# Flow Language Reference
 
-**Version:** 1.0.0 (Full Local - No API)
-**Repository:** https://github.com/prism-iq/flow
+**Version:** 1.1.0
+**Repo:** https://github.com/prism-iq/flow
 
 ---
 
-## What is Flow?
+## Philosophy
 
 Flow reads like English, compiles to C++.
 
 ```
-hello.flow → [Parser] → [AST] → [Codegen] → hello.cpp → [g++] → ./hello
+hello.flow → Parser → AST → Codegen → hello.cpp → g++ → ./hello
 ```
 
-**100% local. Zero API dependency.**
+**100% local. Zero API dependency. Zero cost.**
 
 ---
 
-## Axioms
+## Core Principles
 
-1. **Explicit > Implicit** - No hidden behavior
-2. **Errors are values** - No exceptions
-3. **Null doesn't exist** - Use `maybe`
-4. **Immutable by default** - `can change` for mutable
-5. **No hidden allocations** - Stack default
-6. **One way to do things** - No overloading
-7. **Composition > Inheritance** - Embed, don't extend
-8. **Zero cost abstractions** - Compiles to concrete types
-9. **Fail at compile time** - Strong typing
-10. **Readable > Clever** - Code reads like prose
+1. **Readable > Clever** - Code reads like prose
+2. **Explicit > Implicit** - No hidden behavior
+3. **Immutable by default** - Use `can change` for mutable
+4. **Zero cost abstractions** - Compiles to native C++
+5. **One way to do things** - Consistency over flexibility
 
 ---
 
-## Flow Vocabulary → C++
-
-| Flow | C++ |
-|------|-----|
-| `name is "x"` | `const auto name = "x";` |
-| `x becomes 5` | `x = 5;` |
-| `x, can change` | mutable variable |
-| `to greet someone:` | `void greet(auto someone) {` |
-| `return x` | `return x;` |
-| `a Person has:` | `struct Person {` |
-| `a Person can greet:` | method definition |
-| `my name` | `this->name` |
-| `bob's name` | `bob.name` |
-| `if/otherwise` | `if/else` |
-| `for each x in list:` | `for (auto x : list) {` |
-| `repeat 5 times:` | `for (int i=0; i<5; i++) {` |
-| `while x < 10:` | `while (x < 10) {` |
-| `skip` | `continue;` |
-| `stop` | `break;` |
-| `and/or/not` | `&&/\|\|/!` |
-| `yes/no` | `true/false` |
-| `say "text"` | `std::cout << "text" << std::endl;` |
-| `ask "prompt"` | read line from stdin |
-| `ask` | read line from stdin (no prompt) |
-| `{expr}` in string | string interpolation |
-| `numbers at 0` | `numbers[0]` |
-| `try x` | result/error handling |
-| `maybe x` | `std::optional` |
-| `wait fetch url` | async/await |
-| `do together:` | concurrent execution |
-| `on heap` | heap allocation |
-| `[x*2 for each x in items]` | list comprehension |
-| `[x for each x in 1 to 10 where x > 5]` | filtered comprehension |
-| `value \| func` | piping (func(value)) |
-| `read "file.txt"` | read file content |
-| `write content to "file.txt"` | write to file |
-| `append content to "file.txt"` | append to file |
-| `env "HOME"` | get environment variable |
-| `run "ls -la"` | execute shell command |
-| `return a and b` | return multiple values |
-| `x, y is func args` | unpacking assignment |
-| `using x is open "f":` | context manager (RAII) |
-| `items from 1 to 5` | list slicing |
-| `items from 2` | slice to end |
-| `items to 3` | slice from start |
-| `yield x` | generator yield |
-| `@decorator` | function decorator |
-| `fetch "url"` | HTTP GET request |
-| `parse json` | parse JSON string |
-| `stringify value` | convert to string |
-| `match "pattern" in text` | regex match (bool) |
-| `find "pattern" in text` | regex find all |
-| `replace "pattern" in text with "new"` | regex replace |
-| `hash sha256 value` | SHA256 hash |
-| `hash md5 value` | MD5 hash |
-| `hash sha1 value` | SHA1 hash |
-| `wait expr` | async await |
-| `do together:` | concurrent block |
-| `connect "ws://..."` | WebSocket connect |
-| `send msg to socket` | WebSocket send |
-| `log info "msg"` | info logging |
-| `log warn "msg"` | warning logging |
-| `log error "msg"` | error logging |
-| `test "name":` | test block |
-| `assert cond, "msg"` | assertion |
-| `try: ... catch e:` | error handling |
-| `throw "error"` | throw exception |
-| `to_int x` | `std::stoi(x)` |
-| `to_float x` | `std::stod(x)` |
-| `to_string x` | `std::to_string(x)` |
-| `length x` | `x.size()` |
-
----
-
-## Compilation Examples
+## Quick Reference
 
 ### Variables
 
 ```flow
-name is "Flow"
-age is 25
-count is 0, can change
-count becomes count + 1
-```
-→
-```cpp
-const auto name = std::string("Flow");
-const auto age = 25;
-auto count = 0;
-count = count + 1;
+name is "Flow"              // const auto name = "Flow"
+count is 0, can change      // auto count = 0 (mutable)
+count becomes count + 1     // count = count + 1
 ```
 
 ### Functions
@@ -133,188 +46,174 @@ to greet someone:
 to add a and b:
     return a + b
 ```
-→
-```cpp
-void greet(const std::string& someone) {
-    std::cout << "Hello, " << someone << "!" << std::endl;
-}
 
-auto add(auto a, auto b) {
-    return a + b;
-}
-```
-
-### Structs
+### Entry Point
 
 ```flow
-a Person has:
-    name as text
-    age as number
-
-a Person can introduce:
-    say "I'm {my name}, {my age} years old"
-```
-→
-```cpp
-struct Person {
-    std::string name;
-    int age;
-
-    void introduce() const {
-        std::cout << "I'm " << name << ", " << age << " years old" << std::endl;
-    }
-};
+to start:
+    say "Program begins here"
 ```
 
-### Loops
+---
+
+## Complete Syntax
+
+### Data Types
+
+| Flow | C++ |
+|------|-----|
+| `"text"` | `const char*` / `std::string` |
+| `42` | `int` |
+| `3.14` | `double` |
+| `yes` / `no` | `true` / `false` |
+| `[1, 2, 3]` | initializer list / vector |
+
+### Type Conversions
+
+| Flow | C++ |
+|------|-----|
+| `to_int x` | `std::stoi(x)` |
+| `to_float x` | `std::stod(x)` |
+| `to_string x` | `std::to_string(x)` |
+| `length x` | `x.size()` |
+
+### String Operations
+
+| Flow | Description |
+|------|-------------|
+| `upper text` | Convert to uppercase |
+| `lower text` | Convert to lowercase |
+| `trim text` | Remove leading/trailing whitespace |
+| `split text ","` | Split string into list |
+| `join items " "` | Join list into string |
+| `contains text "sub"` | Check if substring exists |
+| `starts_with text "pre"` | Check prefix |
+| `ends_with text "suf"` | Check suffix |
+| `replace_all text "old" "new"` | Replace all occurrences |
+
+### Variables & Assignment
+
+| Flow | C++ |
+|------|-----|
+| `name is "value"` | `const auto name = "value";` |
+| `x is 5, can change` | `auto x = 5;` (mutable) |
+| `x becomes 10` | `x = 10;` (reassign) |
+| `a, b is func args` | `auto [a, b] = func(args);` |
+
+### Control Flow
 
 ```flow
-for each item in items:
-    say item
+// Conditionals
+if condition:
+    do_something
+otherwise if other:
+    do_other
+otherwise:
+    fallback
+
+// Loops
+for each item in list:
+    process item
+
+for each i in 1 to 10:
+    say i
 
 repeat 5 times:
     say "hello"
 
-for each i in 1 to 10:
-    say i
-```
-→
-```cpp
-for (const auto& item : items) {
-    std::cout << item << std::endl;
-}
+while condition:
+    keep_going
 
-for (int i = 0; i < 5; i++) {
-    std::cout << "hello" << std::endl;
-}
-
-for (int i = 1; i <= 10; i++) {
-    std::cout << i << std::endl;
-}
+// Loop control
+skip        // continue
+stop        // break
 ```
 
-### Conditions
+### Functions & Returns
 
 ```flow
-if age >= 18:
-    say "Adult"
-otherwise:
-    say "Minor"
-```
-→
-```cpp
-if (age >= 18) {
-    std::cout << "Adult" << std::endl;
-} else {
-    std::cout << "Minor" << std::endl;
-}
-```
+// Simple function
+to greet name:
+    say "Hello, {name}!"
 
-### List Comprehensions
+// With return
+to square x:
+    return x * x
 
-```flow
-squares is [x * x for each x in 1 to 5]
-evens is [x for each x in 1 to 10 where x % 2 == 0]
-```
-→
-```cpp
-auto squares = /* lambda building vector */;  // [1, 4, 9, 16, 25]
-auto evens = /* lambda with filter */;        // [2, 4, 6, 8, 10]
-```
-
-### Piping
-
-```flow
-result is 5 | twice | square
-```
-→
-```cpp
-auto result = square(twice(5));
-```
-
-### File I/O
-
-```flow
-write "Hello" to "output.txt"
-append "\nWorld" to "output.txt"
-content is read "output.txt"
-```
-→
-```cpp
-{ std::ofstream _f("output.txt"); _f << "Hello"; }
-{ std::ofstream _f("output.txt", std::ios::app); _f << "\nWorld"; }
-auto content = /* lambda reading file */;
-```
-
-### Environment Variables
-
-```flow
-home is env "HOME"
-user is env "USER"
-```
-→
-```cpp
-auto home = std::getenv("HOME");
-auto user = std::getenv("USER");
-```
-
-### Run Command
-
-```flow
-output is run "ls -la"
-say output
-```
-→
-```cpp
-auto output = /* popen execution */;
-```
-
-### Multiple Returns & Unpacking
-
-```flow
-to get_minmax a and b:
+// Multiple returns
+to minmax a and b:
     if a < b:
         return a and b
     otherwise:
         return b and a
 
-min, max is get_minmax 5 and 3
+// Usage with unpacking
+min, max is minmax 5 and 3
 ```
-→
-```cpp
-auto get_minmax(auto a, auto b) {
-    if (a < b) return std::make_tuple(a, b);
-    else return std::make_tuple(b, a);
-}
-const auto [min, max] = get_minmax(5, 3);
+
+### Structs & Methods
+
+```flow
+// Define struct
+a Person has:
+    name as text
+    age as number
+
+// Define method
+a Person can greet:
+    say "Hi, I'm {my name}"
+
+// Usage
+bob is Person "Bob" 25
+bob's greet
+```
+
+### Collections
+
+```flow
+// Lists
+items is [1, 2, 3, 4, 5]
+first is items at 0
+
+// List comprehension
+squares is [x * x for each x in 1 to 5]
+evens is [x for each x in 1 to 10 where x % 2 == 0]
+
+// Slicing
+middle is items from 1 to 4
+tail is items from 2
+head is items to 3
+
+// Piping
+result is 5 | double | square
+```
+
+### I/O Operations
+
+```flow
+// Console
+say "Hello World"
+name is ask "Enter name: "
+input is ask                    // no prompt
+
+// Files
+content is read "file.txt"
+write "data" to "output.txt"
+append "more" to "output.txt"
+
+// Environment
+home is env "HOME"
+path is env "PATH"
+
+// Shell commands
+output is run "ls -la"
 ```
 
 ### Context Managers
 
 ```flow
 using file is open "/tmp/test.txt":
-    say "File open, auto-closes at end"
-```
-→
-```cpp
-{ auto file = std::fstream("/tmp/test.txt");
-    std::cout << "File open..." << std::endl;
-}  // file auto-closed
-```
-
-### Slicing
-
-```flow
-items is [1, 2, 3, 4, 5]
-middle is items from 1 to 4
-tail is items from 2
-head is items to 3
-```
-→
-```cpp
-auto middle = std::vector(items.begin() + 1, items.begin() + 4);
-auto tail = std::vector(items.begin() + 2, items.end());
-auto head = std::vector(items.begin(), items.begin() + 3);
+    say "File auto-closes at block end"
 ```
 
 ### Generators
@@ -325,16 +224,7 @@ to count_up limit:
         yield i
 
 for each n in count_up 5:
-    say n
-```
-→
-```cpp
-auto count_up(auto limit) {
-    std::vector<int> _result;
-    auto _yield = [&](auto v) { _result.push_back(v); };
-    for (int i = 1; i <= limit; i++) { _yield(i); }
-    return _result;
-}
+    say n    // 1, 2, 3, 4, 5
 ```
 
 ### Decorators
@@ -346,72 +236,64 @@ to doubled value:
 @doubled
 to get_value x:
     return x + 1
-```
-→
-```cpp
-auto doubled(auto value) { return value * 2; }
-auto _get_value_impl(auto x) { return x + 1; }
-auto get_value(auto x) { return doubled(_get_value_impl(x)); }
+
+// get_value 5 returns 12 (not 6)
 ```
 
-### HTTP Client
+---
+
+## Advanced Features
+
+### HTTP Requests
 
 ```flow
 response is fetch "http://api.example.com/data"
 say response
 ```
-→
-```cpp
-// Uses POSIX sockets for HTTP GET request
-auto response = /* socket-based HTTP fetch */;
-```
 
-### Regex
+### Regex Operations
 
 ```flow
+// Test match
 if match "[0-9]+" in text:
     say "Found numbers"
 
+// Find all matches
 matches is find "[a-z]+" in text
+
+// Replace
 cleaned is replace "[0-9]+" in text with "X"
 ```
-→
-```cpp
-if (std::regex_search(text, std::regex("[0-9]+"))) { ... }
-auto matches = /* sregex_iterator loop */;
-auto cleaned = std::regex_replace(text, std::regex("[0-9]+"), "X");
-```
 
-### Hashing
+### Cryptographic Hashing
 
 ```flow
-sha is hash sha256 "hello"
-md is hash md5 "hello"
-```
-→
-```cpp
-// Uses OpenSSL
-auto sha = /* SHA256 computation */;
-auto md = /* MD5 computation */;
+sha is hash sha256 "secret"
+md is hash md5 "secret"
+sha1 is hash sha1 "secret"
 ```
 
 ### Concurrent Execution
 
 ```flow
 do together:
-    task1
-    task2
-    task3
+    task_a
+    task_b
+    task_c
+// All run in parallel, waits for all to complete
 ```
-→
-```cpp
-{
-    std::vector<std::thread> _threads;
-    _threads.emplace_back([&]() { task1; });
-    _threads.emplace_back([&]() { task2; });
-    _threads.emplace_back([&]() { task3; });
-    for (auto& t : _threads) t.join();
-}
+
+### Async/Await
+
+```flow
+result is wait fetch "http://slow.api/data"
+```
+
+### WebSockets
+
+```flow
+socket is connect "ws://server:8080/ws"
+send "Hello" to socket
 ```
 
 ### Logging
@@ -420,11 +302,7 @@ do together:
 log info "Application started"
 log warn "Low memory"
 log error "Connection failed"
-```
-→
-```cpp
 // Outputs: 2024-01-15 10:30:45 [INFO] Application started
-std::cerr << timestamp << " [INFO] " << msg << std::endl;
 ```
 
 ### Testing
@@ -434,16 +312,6 @@ test "addition works":
     result is add 2 and 3
     assert result == 5, "2 + 3 should be 5"
 ```
-→
-```cpp
-void test_addition_works() {
-    auto result = add(2, 3);
-    if (!(result == 5)) {
-        std::cerr << "Assertion failed: 2 + 3 should be 5";
-        std::abort();
-    }
-}
-```
 
 ### Error Handling
 
@@ -452,158 +320,173 @@ try:
     result is risky_operation
 catch e:
     say "Error occurred"
-```
-→
-```cpp
-try {
-    auto result = risky_operation();
-} catch (const std::exception& e) {
-    std::cout << "Error occurred" << std::endl;
-}
+
+throw "Something went wrong"
 ```
 
 ---
 
-## Entry Point
+## Operators
 
+### Arithmetic
+| Flow | C++ |
+|------|-----|
+| `a + b` | `a + b` |
+| `a - b` | `a - b` |
+| `a * b` | `a * b` |
+| `a / b` | `a / b` |
+| `a % b` | `a % b` |
+
+### Comparison
+| Flow | C++ |
+|------|-----|
+| `a < b` | `a < b` |
+| `a > b` | `a > b` |
+| `a <= b` | `a <= b` |
+| `a >= b` | `a >= b` |
+| `a == b` | `a == b` |
+| `a != b` | `a != b` |
+| `a is b` | `a == b` |
+
+### Logical
+| Flow | C++ |
+|------|-----|
+| `a and b` | `a && b` |
+| `a or b` | `a \|\| b` |
+| `not a` | `!a` |
+
+### Special
+| Flow | C++ |
+|------|-----|
+| `value \| func` | `func(value)` |
+| `obj's field` | `obj.field` |
+| `my field` | `this->field` |
+| `list at 0` | `list[0]` |
+| `{expr}` | string interpolation |
+
+---
+
+## CLI Commands
+
+```bash
+flow run hello.flow       # Parse + compile + run
+flow build hello.flow     # Parse + compile (creates binary)
+flow show hello.flow      # Show generated C++ code
+
+# Options
+flow run file.flow --keep    # Keep .cpp file
+flow run file.flow --debug   # Show debug output
+```
+
+---
+
+## Project Structure
+
+```
+/opt/flow/
+├── cmd/flow/main.go          # CLI entry
+├── internal/
+│   ├── lexer/lexer.go        # Tokenizer
+│   ├── parser/parser.go      # AST builder
+│   ├── codegen/codegen.go    # C++ generator
+│   └── compiler/compiler.go  # g++ wrapper
+├── examples/                  # .flow examples
+├── docs/                      # Documentation
+└── scripts/                   # Build/test scripts
+```
+
+---
+
+## Examples
+
+### Hello World
 ```flow
 to start:
     say "Hello, World!"
 ```
-→
-```cpp
-int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
-}
+
+### FizzBuzz
+```flow
+to start:
+    for each i in 1 to 100:
+        if i % 15 == 0:
+            say "FizzBuzz"
+        otherwise if i % 3 == 0:
+            say "Fizz"
+        otherwise if i % 5 == 0:
+            say "Buzz"
+        otherwise:
+            say i
+```
+
+### Fibonacci
+```flow
+to fib n:
+    if n <= 1:
+        return n
+    return fib (n - 1) + fib (n - 2)
+
+to start:
+    for each i in 0 to 10:
+        say fib i
+```
+
+### File Processing
+```flow
+to start:
+    content is read "/etc/hostname"
+    lines is split content "\n"
+    for each line in lines:
+        if length line > 0:
+            say line
+```
+
+### HTTP + JSON
+```flow
+to start:
+    response is fetch "http://httpbin.org/get"
+    say response
+```
+
+### Forensic Analysis
+```flow
+to start:
+    log info "Starting analysis"
+
+    content is read "evidence.txt"
+
+    // Find all emails
+    emails is find "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}" in content
+
+    for each email in emails:
+        say email
+
+    // Hash the evidence
+    hash is hash sha256 content
+    log info "Evidence hash: computed"
+    say hash
 ```
 
 ---
 
-## File Structure
+## Compilation
 
-```
-/opt/flow/
-├── cmd/flow/main.go          # CLI entry point
-├── internal/
-│   ├── cli/cli.go            # Commands: run, build, show
-│   ├── lexer/lexer.go        # Tokenizer with indent tracking
-│   ├── parser/parser.go      # Recursive descent parser
-│   ├── codegen/codegen.go    # AST → C++ code generation
-│   ├── compiler/             # g++ wrapper
-│   └── config/               # Environment config
-├── docs/
-│   ├── SYNTAX.md             # Full language reference
-│   └── PRINCIPLES.md         # Design decisions
-├── examples/                 # .flow examples
-├── CLAUDE.md                 # This file
-└── go.mod
-```
+Flow generates standard C++17 code that compiles with:
+- g++ or clang++
+- Links: pthread, ssl, crypto
+- Headers: iostream, string, vector, regex, thread, future, etc.
 
 ---
 
-## Commands
+## Security Notes
 
-```bash
-flow run hello.flow      # Parse + compile + run
-flow build hello.flow    # Parse + compile (creates binary)
-flow show hello.flow     # Show generated C++
-```
-
----
-
-## TL;DR for Flow Syntax
-
-Flow v1.0 uses natural English:
-
-**Core:**
-- `name is "x"` = assignment
-- `x becomes y` = reassignment
-- `to do something:` = function
-- `a Thing has:` = struct
-- `a Thing can act:` = method
-- `my field` = self.field
-- `x's field` = x.field
-- `for each/repeat/while` = loops
-- `if/otherwise` = conditionals
-- `yes/no` = true/false
-- `and/or/not` = &&/||/!
-- `say` = print
-- `ask` = read input
-- `{x}` = interpolation
-
-**Collections:**
-- `[expr for each x in items]` = list comprehension
-- `value | func` = piping
-- `items from 1 to 5` = slicing
-
-**I/O:**
-- `read/write/append` = file I/O
-- `env "VAR"` = environment variable
-- `run "cmd"` = shell command
-
-**Functions:**
-- `return a and b` = multiple returns
-- `x, y is func` = unpacking
-- `yield x` = generator
-- `@decorator` = function decorator
-- `using x is open:` = context manager
-
-**Networking (v1.0):**
-- `fetch "url"` = HTTP GET
-- `connect "ws://..."` = WebSocket
-- `send msg to socket` = WebSocket send
-
-**Regex (v1.0):**
-- `match "pattern" in text` = regex test
-- `find "pattern" in text` = find all matches
-- `replace "pattern" in text with "new"` = replace
-
-**Crypto (v1.0):**
-- `hash sha256/md5/sha1 value` = cryptographic hash
-
-**Concurrency (v1.0):**
-- `wait expr` = async await
-- `do together:` = parallel execution
-
-**Testing (v1.0):**
-- `test "name":` = test block
-- `assert cond, "msg"` = assertion
-
-**Error Handling (v1.0):**
-- `try: ... catch e:` = exception handling
-- `throw "error"` = raise exception
-
-**Logging (v1.0):**
-- `log info/warn/error "msg"` = structured logging
-
-**Type Conversion:**
-- `to_int x` = convert to integer
-- `to_float x` = convert to float
-- `to_string x` = convert to string
-- `length x` = get length/size
-
-**Generates valid C++20. Links with OpenSSL and pthreads.**
-
----
-
-## GITHUB & SECURITY
-
-**Repo:** https://github.com/prism-iq/flow
-
-### NEVER COMMIT:
+**Never commit:**
 - API keys, tokens, secrets
-- SSH keys (~/.ssh/*)
+- SSH keys
 - Passwords
 - .env files
 
-### Before Committing
+**Pre-commit check:**
 ```bash
-git diff --staged | grep -iE "(sk-ant|password|secret|token|ssh|BEGIN.*KEY)" && echo "SECRET DETECTED" || echo "Clean"
+git diff --staged | grep -iE "(password|secret|token|key)" && echo "WARNING" || echo "Clean"
 ```
-
-### Auto-Commit Protocol
-```bash
-cd /opt/flow && git add -A && git commit -m "[type]: description" && git push
-```
-Types: feat, fix, docs, refactor, chore
