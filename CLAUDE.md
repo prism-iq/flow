@@ -1,6 +1,6 @@
 # Claude Context - Flow Programming Language
 
-**Version:** 0.7.0 (Full Local - No API)
+**Version:** 0.8.0 (Full Local - No API)
 **Repository:** https://github.com/prism-iq/flow
 
 ---
@@ -71,6 +71,10 @@ hello.flow → [Parser] → [AST] → [Codegen] → hello.cpp → [g++] → ./he
 | `run "ls -la"` | execute shell command |
 | `return a and b` | return multiple values |
 | `x, y is func args` | unpacking assignment |
+| `using x is open "f":` | context manager (RAII) |
+| `items from 1 to 5` | list slicing |
+| `items from 2` | slice to end |
+| `items to 3` | slice from start |
 
 ---
 
@@ -257,6 +261,34 @@ auto get_minmax(auto a, auto b) {
 const auto [min, max] = get_minmax(5, 3);
 ```
 
+### Context Managers
+
+```flow
+using file is open "/tmp/test.txt":
+    say "File open, auto-closes at end"
+```
+→
+```cpp
+{ auto file = std::fstream("/tmp/test.txt");
+    std::cout << "File open..." << std::endl;
+}  // file auto-closed
+```
+
+### Slicing
+
+```flow
+items is [1, 2, 3, 4, 5]
+middle is items from 1 to 4
+tail is items from 2
+head is items to 3
+```
+→
+```cpp
+auto middle = std::vector(items.begin() + 1, items.begin() + 4);
+auto tail = std::vector(items.begin() + 2, items.end());
+auto head = std::vector(items.begin(), items.begin() + 3);
+```
+
 ---
 
 ## Entry Point
@@ -309,7 +341,7 @@ flow show hello.flow     # Show generated C++
 
 ## TL;DR for Flow Syntax
 
-Flow v0.7 uses natural English:
+Flow v0.8 uses natural English:
 - `name is "x"` = assignment
 - `x becomes y` = reassignment
 - `to do something:` = function
@@ -330,6 +362,8 @@ Flow v0.7 uses natural English:
 - `run "cmd"` = shell command
 - `return a and b` = multiple returns
 - `x, y is func` = unpacking
+- `using x is open:` = context manager
+- `items from 1 to 5` = slicing
 
 **Generates valid C++20.**
 

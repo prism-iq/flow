@@ -1,0 +1,23 @@
+// slicing.flow - List slicing example
+
+to start:
+    // Create a list
+    numbers is [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    // Slice from index 2 to 5
+    middle is numbers from 2 to 5
+    say "From 2 to 5:"
+    for each n in middle:
+        say n
+
+    // Slice from index 5 to end
+    tail is numbers from 5
+    say "From 5 to end:"
+    for each n in tail:
+        say n
+
+    // Slice from start to index 3
+    head is numbers to 3
+    say "Start to 3:"
+    for each n in head:
+        say n

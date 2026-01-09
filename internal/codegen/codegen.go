@@ -48,6 +48,7 @@ func (g *Generator) Generate(prog *parser.Program) (string, error) {
 	g.writeln("#include <tuple>")
 	g.writeln("#include <array>")
 	g.writeln("#include <memory>")
+	g.writeln("#include <algorithm>")
 	g.writeln("")
 
 	// Generate structs with methods
@@ -155,6 +156,8 @@ func (g *Generator) genStatement(stmt parser.Statement) {
 		g.genWriteFile(s)
 	case parser.UnpackAssign:
 		g.genUnpackAssign(s)
+	case parser.Using:
+		g.genUsing(s)
 	case parser.ExprStmt:
 		g.writeln("%s;", g.genExpr(s.Expr))
 	}
@@ -272,6 +275,18 @@ func (g *Generator) genUnpackAssign(s parser.UnpackAssign) {
 	}
 }
 
+func (g *Generator) genUsing(s parser.Using) {
+	// Context manager using RAII - create scoped block
+	val := g.genExpr(s.Expr)
+	g.writeln("{ auto %s = %s;", s.Name, val)
+	g.indent++
+	for _, stmt := range s.Body {
+		g.genStatement(stmt)
+	}
+	g.indent--
+	g.writeln("}")
+}
+
 func (g *Generator) genExpr(expr parser.Expression) string {
 	switch e := expr.(type) {
 	case parser.BinaryOp:
@@ -321,6 +336,10 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 		return g.genRunCommand(e)
 	case parser.TupleExpr:
 		return g.genTupleExpr(e)
+	case parser.OpenFile:
+		return g.genOpenFile(e)
+	case parser.Slice:
+		return g.genSlice(e)
 	default:
 		return "/* unknown expr */"
 	}
@@ -350,6 +369,33 @@ func (g *Generator) genTupleExpr(te parser.TupleExpr) string {
 		elems = append(elems, g.genExpr(elem))
 	}
 	return fmt.Sprintf("std::make_tuple(%s)", strings.Join(elems, ", "))
+}
+
+func (g *Generator) genOpenFile(of parser.OpenFile) string {
+	path := g.genExpr(of.Path)
+	// Return an fstream that can be used in a using block
+	return fmt.Sprintf("std::fstream(%s)", path)
+}
+
+func (g *Generator) genSlice(sl parser.Slice) string {
+	obj := g.genExpr(sl.Object)
+	// Generate vector slice using iterators
+	if sl.Start == nil && sl.End != nil {
+		// items to 5 → vector from begin to begin+5
+		end := g.genExpr(sl.End)
+		return fmt.Sprintf("std::vector(%s.begin(), %s.begin() + %s)", obj, obj, end)
+	} else if sl.Start != nil && sl.End == nil {
+		// items from 2 → vector from begin+2 to end
+		start := g.genExpr(sl.Start)
+		return fmt.Sprintf("std::vector(%s.begin() + %s, %s.end())", obj, start, obj)
+	} else if sl.Start != nil && sl.End != nil {
+		// items from 1 to 5 → vector from begin+1 to begin+5
+		start := g.genExpr(sl.Start)
+		end := g.genExpr(sl.End)
+		return fmt.Sprintf("std::vector(%s.begin() + %s, %s.begin() + %s)", obj, start, obj, end)
+	}
+	// No slice, just return the object
+	return obj
 }
 
 func (g *Generator) genListComprehension(lc parser.ListComprehension) string {

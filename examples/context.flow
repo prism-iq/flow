@@ -1,0 +1,9 @@
+// context.flow - Context managers example
+
+to start:
+    // Context manager - resource auto-released at end of block
+    using file is open "/tmp/context-test.txt":
+        say "File is open in this block"
+        say "Auto-closed when block ends"
+
+    say "Block finished, file closed"

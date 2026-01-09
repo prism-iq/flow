@@ -57,6 +57,9 @@ const (
 	APPEND
 	ENV
 	RUN
+	USING
+	OPEN
+	FROM
 
 	// Operators
 	PLUS
@@ -119,6 +122,9 @@ var keywords = map[string]TokenType{
 	"append":    APPEND,
 	"env":       ENV,
 	"run":       RUN,
+	"using":     USING,
+	"open":      OPEN,
+	"from":      FROM,
 }
 
 type Token struct {

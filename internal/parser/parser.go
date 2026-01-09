@@ -264,6 +264,29 @@ type UnpackAssign struct {
 
 func (UnpackAssign) stmt() {}
 
+type Using struct {
+	Name string
+	Expr Expression
+	Body []Statement
+}
+
+func (Using) stmt() {}
+
+type OpenFile struct {
+	Path Expression
+	Mode string // "read", "write", "append"
+}
+
+func (OpenFile) expr() {}
+
+type Slice struct {
+	Object Expression
+	Start  Expression // nil means from beginning
+	End    Expression // nil means to end
+}
+
+func (Slice) expr() {}
+
 // Parser
 
 type Parser struct {
@@ -469,6 +492,8 @@ func (p *Parser) parseStatement() (Statement, error) {
 		return p.parseWriteFile(false)
 	case lexer.APPEND:
 		return p.parseWriteFile(true)
+	case lexer.USING:
+		return p.parseUsing()
 	case lexer.SKIP:
 		p.advance()
 		return Skip{}, nil
@@ -681,6 +706,36 @@ func (p *Parser) parseWriteFile(appendMode bool) (Statement, error) {
 	}
 
 	return WriteFile{Content: content, Path: path, Append: appendMode}, nil
+}
+
+func (p *Parser) parseUsing() (Statement, error) {
+	p.advance() // consume 'using'
+
+	name := p.current().Value
+	if !p.match(lexer.IDENT) {
+		return nil, p.error("expected variable name after 'using'")
+	}
+
+	if !p.match(lexer.IS) {
+		return nil, p.error("expected 'is' after variable name in using")
+	}
+
+	expr, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	if !p.match(lexer.COLON) {
+		return nil, p.error("expected ':' after using expression")
+	}
+
+	p.skipNewlines()
+	body, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return Using{Name: name, Expr: expr, Body: body}, nil
 }
 
 func (p *Parser) parseIdentStatement() (Statement, error) {
@@ -951,6 +1006,35 @@ func (p *Parser) parsePostfix() (Expression, error) {
 				return nil, err
 			}
 			expr = Index{Object: expr, Index: idx}
+		} else if p.match(lexer.FROM) {
+			// Slice: items from start to end, items from start
+			// Use parsePrimary for start to avoid it consuming 'to'
+			start, err := p.parsePrimary()
+			if err != nil {
+				return nil, err
+			}
+			var end Expression
+			if p.match(lexer.TO) {
+				end, err = p.parsePrimary()
+				if err != nil {
+					return nil, err
+				}
+			}
+			expr = Slice{Object: expr, Start: start, End: end}
+		} else if p.match(lexer.TO) {
+			// Slice: items to end (from beginning)
+			// Only applies if expr is an identifier (not a literal)
+			if _, isIdent := expr.(Ident); isIdent {
+				end, err := p.parsePrimary()
+				if err != nil {
+					return nil, err
+				}
+				expr = Slice{Object: expr, Start: nil, End: end}
+			} else {
+				// Put back the TO and break - it's not a slice
+				p.pos--
+				break
+			}
 		} else {
 			break
 		}
@@ -1015,6 +1099,14 @@ func (p *Parser) parsePrimary() (Expression, error) {
 			return nil, err
 		}
 		return RunCommand{Command: cmd}, nil
+
+	case lexer.OPEN:
+		p.advance() // consume 'open'
+		path, err := p.parseArgument()
+		if err != nil {
+			return nil, err
+		}
+		return OpenFile{Path: path, Mode: "read"}, nil
 
 	case lexer.IDENT, lexer.A:
 		name := p.current().Value
