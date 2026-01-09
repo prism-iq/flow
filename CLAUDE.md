@@ -10,10 +10,10 @@
 Flow reads like English, compiles to C++.
 
 ```
-hello.flow → [Claude API] → hello.cpp → [g++] → ./hello
+hello.flow → [Parser] → [AST] → [Codegen] → hello.cpp → [g++] → ./hello
 ```
 
-**The AI is the transpiler.**
+**100% local. Zero API dependency.**
 
 ---
 
@@ -64,7 +64,7 @@ hello.flow → [Claude API] → hello.cpp → [g++] → ./hello
 
 ---
 
-## Transpilation Examples
+## Compilation Examples
 
 ### Variables
 
@@ -193,8 +193,10 @@ int main() {
 ├── cmd/flow/main.go          # CLI entry point
 ├── internal/
 │   ├── cli/cli.go            # Commands: run, build, show
-│   ├── transpiler/           # Claude API integration
-│   ├── compiler/             # g++ wrapper + feedback loop
+│   ├── lexer/lexer.go        # Tokenizer with indent tracking
+│   ├── parser/parser.go      # Recursive descent parser
+│   ├── codegen/codegen.go    # AST → C++ code generation
+│   ├── compiler/             # g++ wrapper
 │   └── config/               # Environment config
 ├── docs/
 │   ├── SYNTAX.md             # Full language reference
@@ -209,16 +211,16 @@ int main() {
 ## Commands
 
 ```bash
-flow run hello.flow      # Transpile + compile + run
-flow build hello.flow    # Transpile + compile (creates binary)
+flow run hello.flow      # Parse + compile + run
+flow build hello.flow    # Parse + compile (creates binary)
 flow show hello.flow     # Show generated C++
 ```
 
 ---
 
-## TL;DR for Transpilation
+## TL;DR for Flow Syntax
 
-Flow v0.3 uses natural English:
+Flow v0.4 uses natural English:
 - `name is "x"` = assignment
 - `x becomes y` = reassignment
 - `to do something:` = function
@@ -233,7 +235,7 @@ Flow v0.3 uses natural English:
 - `say` = print
 - `{x}` = interpolation
 
-**Output ONLY valid C++17. No markdown. Just code.**
+**Generates valid C++20.**
 
 ---
 

@@ -10,13 +10,6 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
-# Check for API key
-if [ -z "$ANTHROPIC_API_KEY" ]; then
-    echo -e "${RED}Error: ANTHROPIC_API_KEY not set${NC}"
-    echo "export ANTHROPIC_API_KEY=sk-ant-..."
-    exit 1
-fi
-
 # Build flow if needed
 if [ ! -f "./flow" ]; then
     ./scripts/build.sh
@@ -25,15 +18,27 @@ fi
 echo "Testing Flow examples..."
 echo ""
 
-# Test hello.flow
-echo "Testing hello.flow..."
-OUTPUT=$(./flow run examples/hello.flow)
-if [[ "$OUTPUT" == *"Hello, World!"* ]]; then
-    echo -e "${GREEN}PASS${NC}: hello.flow"
-else
-    echo -e "${RED}FAIL${NC}: hello.flow"
-    echo "Output: $OUTPUT"
-fi
+PASSED=0
+FAILED=0
+
+# Test each example
+for example in examples/*.flow; do
+    name=$(basename "$example")
+    echo -n "Testing $name... "
+
+    if OUTPUT=$(./flow run "$example" 2>&1); then
+        echo -e "${GREEN}PASS${NC}"
+        PASSED=$((PASSED + 1))
+    else
+        echo -e "${RED}FAIL${NC}"
+        echo "Output: $OUTPUT"
+        FAILED=$((FAILED + 1))
+    fi
+done
 
 echo ""
-echo "Tests complete."
+echo "Results: $PASSED passed, $FAILED failed"
+
+if [ $FAILED -gt 0 ]; then
+    exit 1
+fi
