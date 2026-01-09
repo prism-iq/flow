@@ -924,8 +924,8 @@
         let currentInvestigation = null;
         let investigations = [];
         let settings = {
-            llmUrl: 'http://localhost:8001',
-            goUrl: 'http://localhost:8090',
+            llmUrl: '',  // Empty = use relative URL (Go proxy)
+            goUrl: '',   // Empty = use current origin
             apiKey: '',
             autoGenerate: true,
             autoScore: true,
@@ -1001,15 +1001,17 @@
             document.getElementById(`${tabName}-tab`).style.display = 'block';
         }
         
-        // API calls
+        // API calls - uses Go server proxy at /hypothesis/*
         async function api(endpoint, method = 'GET', body = null) {
-            const url = `${settings.llmUrl}${endpoint}`;
+            // Use relative URL for Go proxy, or explicit URL if set
+            const baseUrl = settings.llmUrl || settings.goUrl || '';
+            const url = `${baseUrl}${endpoint}`;
             const options = {
                 method,
                 headers: { 'Content-Type': 'application/json' }
             };
             if (body) options.body = JSON.stringify(body);
-            
+
             try {
                 const res = await fetch(url, options);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
