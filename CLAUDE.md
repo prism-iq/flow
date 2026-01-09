@@ -1,6 +1,6 @@
 # Claude Context - Flow Programming Language
 
-**Version:** 0.8.0 (Full Local - No API)
+**Version:** 0.9.0 (Full Local - No API)
 **Repository:** https://github.com/prism-iq/flow
 
 ---
@@ -75,6 +75,8 @@ hello.flow → [Parser] → [AST] → [Codegen] → hello.cpp → [g++] → ./he
 | `items from 1 to 5` | list slicing |
 | `items from 2` | slice to end |
 | `items to 3` | slice from start |
+| `yield x` | generator yield |
+| `@decorator` | function decorator |
 
 ---
 
@@ -289,6 +291,43 @@ auto tail = std::vector(items.begin() + 2, items.end());
 auto head = std::vector(items.begin(), items.begin() + 3);
 ```
 
+### Generators
+
+```flow
+to count_up limit:
+    for each i in 1 to limit:
+        yield i
+
+for each n in count_up 5:
+    say n
+```
+→
+```cpp
+auto count_up(auto limit) {
+    std::vector<int> _result;
+    auto _yield = [&](auto v) { _result.push_back(v); };
+    for (int i = 1; i <= limit; i++) { _yield(i); }
+    return _result;
+}
+```
+
+### Decorators
+
+```flow
+to doubled value:
+    return value * 2
+
+@doubled
+to get_value x:
+    return x + 1
+```
+→
+```cpp
+auto doubled(auto value) { return value * 2; }
+auto _get_value_impl(auto x) { return x + 1; }
+auto get_value(auto x) { return doubled(_get_value_impl(x)); }
+```
+
 ---
 
 ## Entry Point
@@ -341,7 +380,7 @@ flow show hello.flow     # Show generated C++
 
 ## TL;DR for Flow Syntax
 
-Flow v0.8 uses natural English:
+Flow v0.9 uses natural English:
 - `name is "x"` = assignment
 - `x becomes y` = reassignment
 - `to do something:` = function
@@ -364,6 +403,8 @@ Flow v0.8 uses natural English:
 - `x, y is func` = unpacking
 - `using x is open:` = context manager
 - `items from 1 to 5` = slicing
+- `yield x` = generator
+- `@decorator` = function decorator
 
 **Generates valid C++20.**
 

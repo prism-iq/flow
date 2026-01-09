@@ -60,6 +60,8 @@ const (
 	USING
 	OPEN
 	FROM
+	YIELD
+	AT_SIGN // @
 
 	// Operators
 	PLUS
@@ -125,6 +127,7 @@ var keywords = map[string]TokenType{
 	"using":     USING,
 	"open":      OPEN,
 	"from":      FROM,
+	"yield":     YIELD,
 }
 
 type Token struct {
@@ -265,6 +268,9 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 			l.advance()
 		case ch == '|':
 			l.emit(PIPE, "|")
+			l.advance()
+		case ch == '@':
+			l.emit(AT_SIGN, "@")
 			l.advance()
 
 		default:

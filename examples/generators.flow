@@ -1,0 +1,19 @@
+// generators.flow - Generator functions with yield
+
+to count_up limit:
+    for each i in 1 to limit:
+        yield i
+
+to evens_up_to limit:
+    for each i in 1 to limit:
+        if i % 2 == 0:
+            yield i
+
+to start:
+    say "Counting to 5:"
+    for each n in count_up 5:
+        say n
+
+    say "Even numbers up to 10:"
+    for each n in evens_up_to 10:
+        say n

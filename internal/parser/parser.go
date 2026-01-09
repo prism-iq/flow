@@ -287,6 +287,19 @@ type Slice struct {
 
 func (Slice) expr() {}
 
+type Yield struct {
+	Value Expression
+}
+
+func (Yield) stmt() {}
+
+type Decorator struct {
+	Name     string
+	Function Function
+}
+
+func (Decorator) stmt() {}
+
 // Parser
 
 type Parser struct {
@@ -331,13 +344,32 @@ func (p *Parser) Parse() (*Program, error) {
 }
 
 func (p *Parser) parseTopLevel() (Statement, error) {
+	// Check for decorator: @name
+	if p.match(lexer.AT_SIGN) {
+		decoratorName := p.current().Value
+		if !p.match(lexer.IDENT) {
+			return nil, p.error("expected decorator name after '@'")
+		}
+		p.skipNewlines()
+
+		// Next must be a function definition
+		if !p.match(lexer.TO) {
+			return nil, p.error("expected 'to' after decorator")
+		}
+		fn, err := p.parseFunction()
+		if err != nil {
+			return nil, err
+		}
+		return Decorator{Name: decoratorName, Function: fn.(Function)}, nil
+	}
+
 	if p.match(lexer.TO) {
 		return p.parseFunction()
 	}
 	if p.match(lexer.A) {
 		return p.parseStructOrMethod()
 	}
-	return nil, p.error("expected 'to' or 'a' at top level")
+	return nil, p.error("expected 'to', 'a', or '@' at top level")
 }
 
 func (p *Parser) parseFunction() (Statement, error) {
@@ -494,6 +526,8 @@ func (p *Parser) parseStatement() (Statement, error) {
 		return p.parseWriteFile(true)
 	case lexer.USING:
 		return p.parseUsing()
+	case lexer.YIELD:
+		return p.parseYield()
 	case lexer.SKIP:
 		p.advance()
 		return Skip{}, nil
@@ -736,6 +770,17 @@ func (p *Parser) parseUsing() (Statement, error) {
 	}
 
 	return Using{Name: name, Expr: expr, Body: body}, nil
+}
+
+func (p *Parser) parseYield() (Statement, error) {
+	p.advance() // consume 'yield'
+
+	val, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	return Yield{Value: val}, nil
 }
 
 func (p *Parser) parseIdentStatement() (Statement, error) {

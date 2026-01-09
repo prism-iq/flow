@@ -49,6 +49,7 @@ func (g *Generator) Generate(prog *parser.Program) (string, error) {
 	g.writeln("#include <array>")
 	g.writeln("#include <memory>")
 	g.writeln("#include <algorithm>")
+	g.writeln("#include <functional>")
 	g.writeln("")
 
 	// Generate structs with methods
@@ -58,14 +59,44 @@ func (g *Generator) Generate(prog *parser.Program) (string, error) {
 		}
 	}
 
-	// Generate standalone functions
+	// Generate standalone functions and decorated functions
 	for _, stmt := range prog.Statements {
-		if f, ok := stmt.(parser.Function); ok {
-			g.genFunction(f)
+		switch s := stmt.(type) {
+		case parser.Function:
+			g.genFunction(s)
+		case parser.Decorator:
+			g.genDecorator(s)
 		}
 	}
 
 	return g.output.String(), nil
+}
+
+func (g *Generator) genDecorator(d parser.Decorator) {
+	// Generate the original function with a different name
+	origName := d.Function.Name
+	implName := "_" + origName + "_impl"
+
+	// Generate implementation function
+	implFunc := d.Function
+	implFunc.Name = implName
+	g.genFunction(implFunc)
+
+	// Generate wrapper that applies decorator
+	// Pass the actual result to the decorator, not a thunk
+	params := g.genParams(d.Function.Params)
+	paramNames := strings.Join(d.Function.Params, ", ")
+
+	g.writeln("auto %s(%s) {", origName, params)
+	g.indent++
+	if len(d.Function.Params) > 0 {
+		g.writeln("return %s(%s(%s));", d.Name, implName, paramNames)
+	} else {
+		g.writeln("return %s(%s());", d.Name, implName)
+	}
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
 }
 
 func (g *Generator) genStruct(s parser.Struct) {
@@ -102,8 +133,18 @@ func (g *Generator) genMethod(m parser.Method) {
 }
 
 func (g *Generator) genFunction(f parser.Function) {
+	isGenerator := g.hasYield(f.Body)
+
 	if f.Name == "start" {
 		g.writeln("int main() {")
+	} else if isGenerator {
+		// Generator function - returns vector
+		params := g.genParams(f.Params)
+		g.writeln("auto %s(%s) {", f.Name, params)
+		g.indent++
+		g.writeln("std::vector<int> _result;")
+		g.writeln("auto _yield = [&](auto v) { _result.push_back(v); };")
+		g.indent--
 	} else {
 		params := g.genParams(f.Params)
 		g.writeln("auto %s(%s) {", f.Name, params)
@@ -116,10 +157,47 @@ func (g *Generator) genFunction(f parser.Function) {
 
 	if f.Name == "start" {
 		g.writeln("return 0;")
+	} else if isGenerator {
+		g.writeln("return _result;")
 	}
 	g.indent--
 	g.writeln("}")
 	g.writeln("")
+}
+
+func (g *Generator) hasYield(stmts []parser.Statement) bool {
+	for _, stmt := range stmts {
+		switch s := stmt.(type) {
+		case parser.Yield:
+			return true
+		case parser.If:
+			if g.hasYield(s.Then) || g.hasYield(s.Else) {
+				return true
+			}
+			for _, elif := range s.ElseIfs {
+				if g.hasYield(elif.Then) {
+					return true
+				}
+			}
+		case parser.ForEach:
+			if g.hasYield(s.Body) {
+				return true
+			}
+		case parser.Repeat:
+			if g.hasYield(s.Body) {
+				return true
+			}
+		case parser.While:
+			if g.hasYield(s.Body) {
+				return true
+			}
+		case parser.Using:
+			if g.hasYield(s.Body) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (g *Generator) genParams(params []string) string {
@@ -158,6 +236,8 @@ func (g *Generator) genStatement(stmt parser.Statement) {
 		g.genUnpackAssign(s)
 	case parser.Using:
 		g.genUsing(s)
+	case parser.Yield:
+		g.writeln("_yield(%s);", g.genExpr(s.Value))
 	case parser.ExprStmt:
 		g.writeln("%s;", g.genExpr(s.Expr))
 	}

@@ -1,0 +1,28 @@
+// decorators.flow - Function decorators
+
+// Decorator that doubles the result
+to doubled value:
+    return value * 2
+
+// Decorator that adds 10
+to plus_ten value:
+    return value + 10
+
+@doubled
+to get_value x:
+    return x + 1
+
+@plus_ten
+to square n:
+    return n * n
+
+to start:
+    // get_value(20) = 21, doubled = 42
+    result1 is get_value 20
+    say "Doubled result (should be 42):"
+    say result1
+
+    // square(5) = 25, plus_ten = 35
+    result2 is square 5
+    say "Plus ten result (should be 35):"
+    say result2
