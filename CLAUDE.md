@@ -54,6 +54,8 @@ hello.flow → [Parser] → [AST] → [Codegen] → hello.cpp → [g++] → ./he
 | `and/or/not` | `&&/\|\|/!` |
 | `yes/no` | `true/false` |
 | `say "text"` | `std::cout << "text" << std::endl;` |
+| `ask "prompt"` | read line from stdin |
+| `ask` | read line from stdin (no prompt) |
 | `{expr}` in string | string interpolation |
 | `numbers at 0` | `numbers[0]` |
 | `try x` | result/error handling |
@@ -97,6 +99,10 @@ hello.flow → [Parser] → [AST] → [Codegen] → hello.cpp → [g++] → ./he
 | `assert cond, "msg"` | assertion |
 | `try: ... catch e:` | error handling |
 | `throw "error"` | throw exception |
+| `to_int x` | `std::stoi(x)` |
+| `to_float x` | `std::stod(x)` |
+| `to_string x` | `std::to_string(x)` |
+| `length x` | `x.size()` |
 
 ---
 
@@ -523,6 +529,7 @@ Flow v1.0 uses natural English:
 - `yes/no` = true/false
 - `and/or/not` = &&/||/!
 - `say` = print
+- `ask` = read input
 - `{x}` = interpolation
 
 **Collections:**
@@ -569,6 +576,12 @@ Flow v1.0 uses natural English:
 
 **Logging (v1.0):**
 - `log info/warn/error "msg"` = structured logging
+
+**Type Conversion:**
+- `to_int x` = convert to integer
+- `to_float x` = convert to float
+- `to_string x` = convert to string
+- `length x` = get length/size
 
 **Generates valid C++20. Links with OpenSSL and pthreads.**
 
