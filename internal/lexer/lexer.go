@@ -345,14 +345,37 @@ func (l *Lexer) scanCompare(singleType TokenType, singleVal string, doubleType T
 	}
 }
 
-// scanString scans a string literal.
+// scanString scans a string literal with escape sequence support.
 func (l *Lexer) scanString() error {
 	l.advance() // skip opening quote
-	start := l.pos
+	var result strings.Builder
 
 	for l.current() != '"' && !l.atEnd() {
 		if l.current() == '\n' {
 			return fmt.Errorf("unterminated string at %d:%d", l.line, l.column)
+		}
+		if l.current() == '\\' {
+			l.advance() // skip backslash
+			switch l.current() {
+			case 'n':
+				result.WriteByte('\n')
+			case 't':
+				result.WriteByte('\t')
+			case 'r':
+				result.WriteByte('\r')
+			case '\\':
+				result.WriteByte('\\')
+			case '"':
+				result.WriteByte('"')
+			case '0':
+				result.WriteByte(0)
+			default:
+				// Unknown escape, keep as-is
+				result.WriteByte('\\')
+				result.WriteByte(l.current())
+			}
+		} else {
+			result.WriteByte(l.current())
 		}
 		l.advance()
 	}
@@ -361,7 +384,7 @@ func (l *Lexer) scanString() error {
 		return fmt.Errorf("unterminated string at %d:%d", l.line, l.column)
 	}
 
-	l.emit(STRING, l.input[start:l.pos])
+	l.emit(STRING, result.String())
 	l.advance() // skip closing quote
 	return nil
 }

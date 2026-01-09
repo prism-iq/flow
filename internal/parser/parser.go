@@ -785,8 +785,8 @@ func (p *Parser) parseStatement() (Statement, error) {
 	case lexer.SEND:
 		return p.parseSend()
 
-	// Identifier-based statements
-	case lexer.IDENT:
+	// Identifier-based statements (including 'a' which can be a variable)
+	case lexer.IDENT, lexer.A:
 		return p.parseIdentStatement()
 
 	default:
@@ -975,9 +975,26 @@ func (p *Parser) parseSay() (Statement, error) {
 func (p *Parser) parseWriteFile(appendMode bool) (Statement, error) {
 	p.advance()
 
-	content, err := p.parseExpression()
-	if err != nil {
-		return nil, err
+	// Special handling: if we have "ident to", don't interpret as slice
+	var content Expression
+	var err error
+
+	if p.current().Type == lexer.IDENT || p.current().Type == lexer.A {
+		// Check if next token is TO (meaning simple variable, not slice)
+		if p.peek().Type == lexer.TO {
+			content = Ident{Name: p.current().Value}
+			p.advance()
+		} else {
+			content, err = p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		content, err = p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if !p.match(lexer.TO) {
@@ -1832,6 +1849,13 @@ func (p *Parser) current() lexer.Token {
 		return lexer.Token{Type: lexer.EOF}
 	}
 	return p.tokens[p.pos]
+}
+
+func (p *Parser) peek() lexer.Token {
+	if p.pos+1 >= len(p.tokens) {
+		return lexer.Token{Type: lexer.EOF}
+	}
+	return p.tokens[p.pos+1]
 }
 
 func (p *Parser) advance() {

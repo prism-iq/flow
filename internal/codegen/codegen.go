@@ -21,6 +21,124 @@ func New() *Generator {
 	}
 }
 
+// escapeCppString escapes a string for C++ string literal output
+func escapeCppString(s string) string {
+	var result strings.Builder
+	for _, c := range s {
+		switch c {
+		case '\n':
+			result.WriteString("\\n")
+		case '\t':
+			result.WriteString("\\t")
+		case '\r':
+			result.WriteString("\\r")
+		case '\\':
+			result.WriteString("\\\\")
+		case '"':
+			result.WriteString("\\\"")
+		case 0:
+			result.WriteString("\\0")
+		default:
+			result.WriteRune(c)
+		}
+	}
+	return result.String()
+}
+
+// isValidInterpolation checks if the content inside {} looks like a valid identifier/expression
+func isValidInterpolation(content string) bool {
+	if len(content) == 0 {
+		return false
+	}
+	// Must start with a letter or underscore (identifier)
+	first := content[0]
+	if !((first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z') || first == '_') {
+		return false
+	}
+	// Regex quantifiers like {2,4} or {3} are NOT valid interpolation
+	// They contain only digits and optional comma
+	allDigitsOrComma := true
+	for _, c := range content {
+		if !((c >= '0' && c <= '9') || c == ',' || c == ' ') {
+			allDigitsOrComma = false
+			break
+		}
+	}
+	if allDigitsOrComma {
+		return false
+	}
+	return true
+}
+
+// genStringWithInterpolation handles string interpolation like "Hello {name}!"
+func (g *Generator) genStringWithInterpolation(s string) string {
+	// Check if string contains interpolation
+	if !strings.Contains(s, "{") {
+		return fmt.Sprintf("\"%s\"", escapeCppString(s))
+	}
+
+	// Parse and build string stream expression
+	var parts []string
+	i := 0
+	for i < len(s) {
+		if s[i] == '{' {
+			// Find closing brace
+			j := i + 1
+			braceCount := 1
+			for j < len(s) && braceCount > 0 {
+				if s[j] == '{' {
+					braceCount++
+				} else if s[j] == '}' {
+					braceCount--
+				}
+				j++
+			}
+			if braceCount == 0 {
+				// Extract content inside braces
+				content := s[i+1 : j-1]
+				// Check if this looks like valid interpolation
+				if isValidInterpolation(content) {
+					parts = append(parts, content)
+				} else {
+					// Not valid interpolation, keep as literal (including braces)
+					parts = append(parts, fmt.Sprintf("\"%s\"", escapeCppString(s[i:j])))
+				}
+				i = j
+			} else {
+				// Unmatched brace, treat as literal
+				parts = append(parts, fmt.Sprintf("\"%s\"", escapeCppString(string(s[i]))))
+				i++
+			}
+		} else {
+			// Regular text until next { or end
+			j := i
+			for j < len(s) && s[j] != '{' {
+				j++
+			}
+			text := s[i:j]
+			if text != "" {
+				parts = append(parts, fmt.Sprintf("\"%s\"", escapeCppString(text)))
+			}
+			i = j
+		}
+	}
+
+	// Generate concatenation with ostringstream
+	if len(parts) == 1 {
+		return parts[0]
+	}
+
+	// Use lambda with ostringstream for proper concatenation
+	var result strings.Builder
+	result.WriteString("[&]() { std::ostringstream _ss; _ss")
+	for _, part := range parts {
+		result.WriteString(" << ")
+		result.WriteString(part)
+	}
+	result.WriteString("; return _ss.str(); }()")
+	return result.String()
+}
+
 func GenerateCode(prog *parser.Program) (string, error) {
 	gen := New()
 	return gen.Generate(prog)
@@ -411,7 +529,7 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 	case parser.FloatLit:
 		return fmt.Sprintf("%v", e.Value)
 	case parser.StringLit:
-		return fmt.Sprintf("\"%s\"", e.Value)
+		return g.genStringWithInterpolation(e.Value)
 	case parser.BoolLit:
 		if e.Value {
 			return "true"
