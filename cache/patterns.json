@@ -1,0 +1,37 @@
+{
+  "025af780b126ecf4f2ebe04f4a6195bf70572cfa0a20e33c725fd4927d434996": {
+    "cpp": "#include \u003ciostream\u003e\n\nint main() {\n    std::cout \u003c\u003c \"Hello, World!\" \u003c\u003c std::endl;\n    return 0;\n}",
+    "timestamp": "2026-01-08T20:03:58.758360472+01:00",
+    "version": "0.1.0"
+  },
+  "524af8d612cf7c2a35ee6a0fbac7b9412b3e964c8fa82e4f5f2e2fc8104fd13f": {
+    "cpp": "#include \u003ciostream\u003e\n\nint main() {\n    std::cout \u003c\u003c \"Hello, World!\" \u003c\u003c std::endl;\n    return 0;\n}",
+    "timestamp": "2026-01-09T03:19:45.770200923+01:00",
+    "version": "0.1.0"
+  },
+  "63f6302f1abc7a5709cdbaafe14c006fabb3e671ef0076c690400d895f5f1662": {
+    "cpp": "#include \u003ciostream\u003e\n\nint main() {\n    std::cout \u003c\u003c \"Counting to 5:\" \u003c\u003c std::endl;\n    for (int i = 1; i \u003c= 5; i++) {\n        std::cout \u003c\u003c i \u003c\u003c std::endl;\n    }\n\n    std::cout \u003c\u003c \"---\" \u003c\u003c std::endl;\n    std::cout \u003c\u003c \"Countdown:\" \u003c\u003c std::endl;\n    auto x = 5;\n    while (x \u003e 0) {\n        std::cout \u003c\u003c x \u003c\u003c std::endl;\n        x = x - 1;\n    }\n    std::cout \u003c\u003c \"Boom!\" \u003c\u003c std::endl;\n    return 0;\n}",
+    "timestamp": "2026-01-08T20:07:38.452785287+01:00",
+    "version": "0.1.0"
+  },
+  "8885fdc94051106b14df2cd86aa7de74c502c6f0af30552880251866583237ec": {
+    "cpp": "#include \u003ciostream\u003e\n\nvoid check_age(int age) {\n    if (age \u003c 0) {\n        std::cout \u003c\u003c \"Invalid age\" \u003c\u003c std::endl;\n    } else if (age \u003c 13) {\n        std::cout \u003c\u003c \"Child\" \u003c\u003c std::endl;\n    } else if (age \u003c 20) {\n        std::cout \u003c\u003c \"Teenager\" \u003c\u003c std::endl;\n    } else if (age \u003c 65) {\n        std::cout \u003c\u003c \"Adult\" \u003c\u003c std::endl;\n    } else {\n        std::cout \u003c\u003c \"Senior\" \u003c\u003c std::endl;\n    }\n}\n\nvoid check_access(bool logged_in, bool is_admin) {\n    if (logged_in \u0026\u0026 is_admin) {\n        std::cout \u003c\u003c \"Full access\" \u003c\u003c std::endl;\n    } else if (logged_in \u0026\u0026 !is_admin) {\n        std::cout \u003c\u003c \"Limited access\" \u003c\u003c std::endl;\n    } else {\n        std::cout \u003c\u003c \"No access\" \u003c\u003c std::endl;\n    }\n}\n\nint main() {\n    check_age(8);\n    check_age(16);\n    check_age(35);\n    check_age(70);\n    \n    std::cout \u003c\u003c \"---\" \u003c\u003c std::endl;\n    \n    check_access(true, true);\n    check_access(true, false);\n    check_access(false, false);\n    \n    return 0;\n}",
+    "timestamp": "2026-01-09T03:20:09.051761381+01:00",
+    "version": "0.1.0"
+  },
+  "9dc002d4c204bb15c5302ea8e18740e6dcd652717d5f8a4175569c0a3089999f": {
+    "cpp": "#include \u003ciostream\u003e\n\nint add(int a, int b) {\n    return a + b;\n}\n\nint multiply(int a, int b) {\n    return a * b;\n}\n\nint square(int x) {\n    return x * x;\n}\n\nint factorial(int n) {\n    if (n \u003c= 1) {\n        return 1;\n    }\n    return n * factorial(n - 1);\n}\n\nint main() {\n    std::cout \u003c\u003c \"2 + 3 =\" \u003c\u003c std::endl;\n    std::cout \u003c\u003c add(2, 3) \u003c\u003c std::endl;\n    std::cout \u003c\u003c \"4 * 5 =\" \u003c\u003c std::endl;\n    std::cout \u003c\u003c multiply(4, 5) \u003c\u003c std::endl;\n    std::cout \u003c\u003c \"7 squared =\" \u003c\u003c std::endl;\n    std::cout \u003c\u003c square(7) \u003c\u003c std::endl;\n    std::cout \u003c\u003c \"5! =\" \u003c\u003c std::endl;\n    std::cout \u003c\u003c factorial(5) \u003c\u003c std::endl;\n    return 0;\n}",
+    "timestamp": "2026-01-09T03:20:20.203880521+01:00",
+    "version": "0.1.0"
+  },
+  "b2b3a82ff9c7d10d14de0d28c6deb53813f40ed33593ba1a9a82134989ba3cae": {
+    "cpp": "#include \u003ciostream\u003e\n\nint fib(int n) {\n    if (n \u003c= 1) {\n        return n;\n    }\n    return fib(n - 1) + fib(n - 2);\n}\n\nint main() {\n    std::cout \u003c\u003c \"Fibonacci sequence:\" \u003c\u003c std::endl;\n    for (int i = 0; i \u003c 10; i++) {\n        std::cout \u003c\u003c fib(i) \u003c\u003c std::endl;\n    }\n    return 0;\n}",
+    "timestamp": "2026-01-08T20:04:11.971249726+01:00",
+    "version": "0.1.0"
+  },
+  "d7adc8c16021ce245b92077c841bc058b39ba3a1e5170260bc71b93056c86ae3": {
+    "cpp": "#include \u003ciostream\u003e\n\nint fib(int n) {\n    if (n \u003c= 1) {\n        return n;\n    }\n    return fib(n - 1) + fib(n - 2);\n}\n\nint main() {\n    std::cout \u003c\u003c \"Fibonacci sequence:\" \u003c\u003c std::endl;\n    for (int i = 0; i \u003c 10; i++) {\n        std::cout \u003c\u003c fib(i) \u003c\u003c std::endl;\n    }\n    return 0;\n}",
+    "timestamp": "2026-01-09T03:19:59.17870206+01:00",
+    "version": "0.1.0"
+  }
+}

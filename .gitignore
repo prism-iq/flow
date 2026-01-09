@@ -1,42 +1,10 @@
-# Binary
-/flow
-
-# Cache
-/cache/
-
-# Environment
 .env
-
-# Compiled examples
-/examples/*.cpp
-/examples/hello
-/examples/fibonacci
-/examples/loop
-/examples/loops
-/examples/fizzbuzz
-/examples/greeting
-/examples/math
-/examples/conditions
-/examples/variables
-
-# Go
+*.pem
+*.key
+/flow
 *.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-go.work
-go.work.sum
-
-# IDE
-.idea/
+/build/
+/dist/
 .vscode/
-*.swp
-*.swo
-*~
-
-# OS
+.idea/
 .DS_Store
-Thumbs.db

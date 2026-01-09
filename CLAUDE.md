@@ -344,3 +344,27 @@ Flow uses natural English words:
 - `#{x}` = string interpolation
 
 Transpile to clean C++17. No markdown. Just code.
+
+---
+
+## GITHUB & SECURITY
+
+**Repo:** https://github.com/prism-iq/flow (LIVE)
+
+### NEVER COMMIT:
+- API keys, tokens, secrets
+- SSH keys (~/.ssh/*)
+- Passwords
+- .env files
+
+### Before Committing
+```bash
+git diff --staged | grep -iE "(sk-ant|password|secret|token|ssh|BEGIN.*KEY)" && echo "⚠️ SECRET DETECTED" || echo "✓ Clean"
+```
+
+### Auto-Commit Protocol
+```bash
+cd /opt/flow && git add -A && git commit -m "[type]: description" && git push
+```
+Types: feat, fix, docs, refactor, chore
+
