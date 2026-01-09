@@ -8,3 +8,14 @@
 .vscode/
 .idea/
 .DS_Store
+/cache/
+/examples/*.cpp
+/examples/hello
+/examples/fibonacci
+/examples/loop
+/examples/loops
+/examples/fizzbuzz
+/examples/greeting
+/examples/math
+/examples/conditions
+/examples/variables
