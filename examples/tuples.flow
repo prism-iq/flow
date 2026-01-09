@@ -1,0 +1,26 @@
+// tuples.flow - Multiple returns and unpacking
+
+to get_minmax a and b:
+    if a < b:
+        return a and b
+    otherwise:
+        return b and a
+
+to get_coords point:
+    // Return x, y, z coordinates
+    return 10 and 20 and 30
+
+to start:
+    // Unpack two values from function
+    min, max is get_minmax 5 and 3
+    say "Min:"
+    say min
+    say "Max:"
+    say max
+
+    // Unpack three values
+    x, y, z is get_coords "origin"
+    say "Coordinates:"
+    say x
+    say y
+    say z

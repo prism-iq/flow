@@ -1,0 +1,12 @@
+// runcommand.flow - Execute shell commands
+
+to start:
+    // Run a simple command
+    output is run "echo Hello from shell"
+    say "Command output:"
+    say output
+
+    // Run pwd
+    cwd is run "pwd"
+    say "Current directory:"
+    say cwd

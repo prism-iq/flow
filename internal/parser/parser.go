@@ -244,6 +244,26 @@ type WriteFile struct {
 
 func (WriteFile) stmt() {}
 
+type RunCommand struct {
+	Command Expression
+}
+
+func (RunCommand) expr() {}
+
+type TupleExpr struct {
+	Elements []Expression
+}
+
+func (TupleExpr) expr() {}
+
+type UnpackAssign struct {
+	Names   []string
+	Value   Expression
+	Mutable bool
+}
+
+func (UnpackAssign) stmt() {}
+
 // Parser
 
 type Parser struct {
@@ -610,9 +630,23 @@ func (p *Parser) parseReturn() (Statement, error) {
 		return Return{}, nil
 	}
 
-	val, err := p.parseExpression()
+	// Parse first value using parseComparison to avoid consuming 'and'
+	val, err := p.parseComparison()
 	if err != nil {
 		return nil, err
+	}
+
+	// Check for multiple returns: return a and b and c
+	if p.check(lexer.AND) {
+		elements := []Expression{val}
+		for p.match(lexer.AND) {
+			elem, err := p.parseComparison()
+			if err != nil {
+				return nil, err
+			}
+			elements = append(elements, elem)
+		}
+		return Return{Value: TupleExpr{Elements: elements}}, nil
 	}
 
 	return Return{Value: val}, nil
@@ -652,6 +686,43 @@ func (p *Parser) parseWriteFile(appendMode bool) (Statement, error) {
 func (p *Parser) parseIdentStatement() (Statement, error) {
 	name := p.current().Value
 	p.advance()
+
+	// Check for unpacking: a, b is value
+	if p.match(lexer.COMMA) {
+		names := []string{name}
+		for {
+			if p.current().Type != lexer.IDENT {
+				return nil, p.error("expected identifier in unpacking")
+			}
+			names = append(names, p.current().Value)
+			p.advance()
+			if !p.match(lexer.COMMA) {
+				break
+			}
+		}
+
+		if !p.match(lexer.IS) {
+			return nil, p.error("expected 'is' after unpacking names")
+		}
+
+		val, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+
+		mutable := false
+		if p.match(lexer.COMMA) {
+			if !p.match(lexer.CAN) {
+				return nil, p.error("expected 'can' after ','")
+			}
+			if !p.match(lexer.CHANGE) {
+				return nil, p.error("expected 'change' after 'can'")
+			}
+			mutable = true
+		}
+
+		return UnpackAssign{Names: names, Value: val, Mutable: mutable}, nil
+	}
 
 	if p.match(lexer.IS) {
 		// Assignment
@@ -936,6 +1007,14 @@ func (p *Parser) parsePrimary() (Expression, error) {
 			return nil, err
 		}
 		return EnvVar{Name: name}, nil
+
+	case lexer.RUN:
+		p.advance() // consume 'run'
+		cmd, err := p.parseArgument()
+		if err != nil {
+			return nil, err
+		}
+		return RunCommand{Command: cmd}, nil
 
 	case lexer.IDENT, lexer.A:
 		name := p.current().Value

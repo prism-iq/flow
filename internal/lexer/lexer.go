@@ -56,6 +56,7 @@ const (
 	WRITE
 	APPEND
 	ENV
+	RUN
 
 	// Operators
 	PLUS
@@ -117,6 +118,7 @@ var keywords = map[string]TokenType{
 	"write":     WRITE,
 	"append":    APPEND,
 	"env":       ENV,
+	"run":       RUN,
 }
 
 type Token struct {

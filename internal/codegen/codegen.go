@@ -45,6 +45,9 @@ func (g *Generator) Generate(prog *parser.Program) (string, error) {
 	g.writeln("#include <fstream>")
 	g.writeln("#include <sstream>")
 	g.writeln("#include <cstdlib>")
+	g.writeln("#include <tuple>")
+	g.writeln("#include <array>")
+	g.writeln("#include <memory>")
 	g.writeln("")
 
 	// Generate structs with methods
@@ -150,6 +153,8 @@ func (g *Generator) genStatement(stmt parser.Statement) {
 		g.writeln("break;")
 	case parser.WriteFile:
 		g.genWriteFile(s)
+	case parser.UnpackAssign:
+		g.genUnpackAssign(s)
 	case parser.ExprStmt:
 		g.writeln("%s;", g.genExpr(s.Expr))
 	}
@@ -256,6 +261,17 @@ func (g *Generator) genWriteFile(s parser.WriteFile) {
 	}
 }
 
+func (g *Generator) genUnpackAssign(s parser.UnpackAssign) {
+	// Use C++17 structured bindings: auto [a, b] = expr;
+	names := strings.Join(s.Names, ", ")
+	val := g.genExpr(s.Value)
+	if s.Mutable {
+		g.writeln("auto [%s] = %s;", names, val)
+	} else {
+		g.writeln("const auto [%s] = %s;", names, val)
+	}
+}
+
 func (g *Generator) genExpr(expr parser.Expression) string {
 	switch e := expr.(type) {
 	case parser.BinaryOp:
@@ -301,6 +317,10 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 		return g.genReadFile(e)
 	case parser.EnvVar:
 		return g.genEnvVar(e)
+	case parser.RunCommand:
+		return g.genRunCommand(e)
+	case parser.TupleExpr:
+		return g.genTupleExpr(e)
 	default:
 		return "/* unknown expr */"
 	}
@@ -316,6 +336,20 @@ func (g *Generator) genEnvVar(ev parser.EnvVar) string {
 	name := g.genExpr(ev.Name)
 	// std::getenv returns nullptr if not found, so handle that
 	return fmt.Sprintf("[&]() { const char* _v = std::getenv(%s); return _v ? std::string(_v) : std::string(); }()", name)
+}
+
+func (g *Generator) genRunCommand(rc parser.RunCommand) string {
+	cmd := g.genExpr(rc.Command)
+	// Execute command and capture stdout using popen
+	return fmt.Sprintf("[&]() { std::string _result; std::array<char, 128> _buf; std::unique_ptr<FILE, decltype(&pclose)> _pipe(popen(%s, \"r\"), pclose); if (_pipe) { while (fgets(_buf.data(), _buf.size(), _pipe.get()) != nullptr) { _result += _buf.data(); } } return _result; }()", cmd)
+}
+
+func (g *Generator) genTupleExpr(te parser.TupleExpr) string {
+	var elems []string
+	for _, elem := range te.Elements {
+		elems = append(elems, g.genExpr(elem))
+	}
+	return fmt.Sprintf("std::make_tuple(%s)", strings.Join(elems, ", "))
 }
 
 func (g *Generator) genListComprehension(lc parser.ListComprehension) string {

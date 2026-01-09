@@ -1,6 +1,6 @@
 # Claude Context - Flow Programming Language
 
-**Version:** 0.6.0 (Full Local - No API)
+**Version:** 0.7.0 (Full Local - No API)
 **Repository:** https://github.com/prism-iq/flow
 
 ---
@@ -68,6 +68,9 @@ hello.flow → [Parser] → [AST] → [Codegen] → hello.cpp → [g++] → ./he
 | `write content to "file.txt"` | write to file |
 | `append content to "file.txt"` | append to file |
 | `env "HOME"` | get environment variable |
+| `run "ls -la"` | execute shell command |
+| `return a and b` | return multiple values |
+| `x, y is func args` | unpacking assignment |
 
 ---
 
@@ -223,6 +226,37 @@ auto home = std::getenv("HOME");
 auto user = std::getenv("USER");
 ```
 
+### Run Command
+
+```flow
+output is run "ls -la"
+say output
+```
+→
+```cpp
+auto output = /* popen execution */;
+```
+
+### Multiple Returns & Unpacking
+
+```flow
+to get_minmax a and b:
+    if a < b:
+        return a and b
+    otherwise:
+        return b and a
+
+min, max is get_minmax 5 and 3
+```
+→
+```cpp
+auto get_minmax(auto a, auto b) {
+    if (a < b) return std::make_tuple(a, b);
+    else return std::make_tuple(b, a);
+}
+const auto [min, max] = get_minmax(5, 3);
+```
+
 ---
 
 ## Entry Point
@@ -275,7 +309,7 @@ flow show hello.flow     # Show generated C++
 
 ## TL;DR for Flow Syntax
 
-Flow v0.6 uses natural English:
+Flow v0.7 uses natural English:
 - `name is "x"` = assignment
 - `x becomes y` = reassignment
 - `to do something:` = function
@@ -293,6 +327,9 @@ Flow v0.6 uses natural English:
 - `value | func` = piping
 - `read/write/append` = file I/O
 - `env "VAR"` = environment variable
+- `run "cmd"` = shell command
+- `return a and b` = multiple returns
+- `x, y is func` = unpacking
 
 **Generates valid C++20.**
 
