@@ -527,7 +527,12 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 	case parser.IntLit:
 		return fmt.Sprintf("%d", e.Value)
 	case parser.FloatLit:
-		return fmt.Sprintf("%v", e.Value)
+		// Ensure float is formatted with decimal point for C++
+		s := fmt.Sprintf("%v", e.Value)
+		if !strings.Contains(s, ".") {
+			s += ".0"
+		}
+		return s
 	case parser.StringLit:
 		return g.genStringWithInterpolation(e.Value)
 	case parser.BoolLit:
