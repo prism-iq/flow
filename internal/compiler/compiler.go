@@ -41,14 +41,17 @@ func (c *Compiler) CompileAndRun(cppCode, flowFile string) (string, error) {
 		return "", err
 	}
 
-	// Run the binary
+	// Run the binary with stdin/stdout/stderr connected
 	cmd := exec.Command(binFile)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("execution failed: %w\n%s", err, string(output))
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("execution failed: %w", err)
 	}
 
-	return string(output), nil
+	return "", nil
 }
 
 func (c *Compiler) Compile(cppCode, flowFile string, keepCpp bool) (string, error) {

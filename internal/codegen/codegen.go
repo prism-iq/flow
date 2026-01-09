@@ -570,7 +570,7 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 				}
 			case "length":
 				if len(args) == 1 {
-					return fmt.Sprintf("static_cast<int>(%s.size())", args[0])
+					return fmt.Sprintf("static_cast<int>(std::string(%s).size())", args[0])
 				}
 			}
 		}
@@ -632,7 +632,7 @@ func (g *Generator) genAsk(a parser.Ask) string {
 	// Read a line from stdin, optionally displaying a prompt first
 	if a.Prompt != nil {
 		prompt := g.genExpr(a.Prompt)
-		return fmt.Sprintf(`[&]() { std::cout << %s; std::string _input; std::getline(std::cin, _input); return _input; }()`, prompt)
+		return fmt.Sprintf(`[&]() { std::cout << %s << std::flush; std::string _input; std::getline(std::cin, _input); return _input; }()`, prompt)
 	}
 	return `[&]() { std::string _input; std::getline(std::cin, _input); return _input; }()`
 }

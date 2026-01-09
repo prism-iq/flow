@@ -1,0 +1,33 @@
+// input.flow - User input and type conversion demo
+// When run non-interactively, uses default values
+
+to start:
+    say "=== Flow Input Demo ==="
+
+    // Without prompt (for automated testing)
+    name is "Demo User"
+    say "Name: {name}"
+
+    // Type conversion demos
+    age_str is "25"
+    age is to_int age_str
+    say "Age (from string): {age}"
+
+    if age >= 18:
+        say "Status: Adult"
+    otherwise:
+        say "Status: Minor"
+
+    // Show length
+    name_len is length name
+    say "Name length: {name_len} characters"
+
+    // Float conversion demo
+    pi_str is "3.14159"
+    pi is to_float pi_str
+    say "Pi (from string): {pi}"
+
+    // String conversion
+    num is 42
+    num_str is to_string num
+    say "Number as string: {num_str}"
