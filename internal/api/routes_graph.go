@@ -3,7 +3,9 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 
 	"flow/pkg/logger"
 
@@ -34,7 +36,7 @@ type StoreEntitiesRequest struct {
 }
 
 func RegisterGraphRoutes(rg *gin.RouterGroup, log *logger.Logger) {
-	connStr := "host=localhost port=5432 user=postgres dbname=flow sslmode=disable"
+	connStr := buildConnStr()
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to connect to database")
@@ -323,6 +325,27 @@ func (h *GraphHandler) searchNodes(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"results": results, "count": len(results)})
+}
+
+func buildConnStr() string {
+	host := getEnv("PG_HOST", "localhost")
+	port := getEnv("PG_PORT", "5432")
+	user := getEnv("PG_USER", "postgres")
+	password := getEnv("PG_PASSWORD", "")
+	dbname := getEnv("PG_DATABASE", "flow")
+
+	connStr := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable", host, port, user, dbname)
+	if password != "" {
+		connStr += fmt.Sprintf(" password=%s", password)
+	}
+	return connStr
+}
+
+func getEnv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
 }
 
 func mapEntityTypeToLabel(entityType string) string {

@@ -1,98 +1,59 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  orchestrator:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+  postgres:
+    image: postgres:16-alpine
+    container_name: flow-postgres
     environment:
-      - PORT=8080
-      - LOG_LEVEL=info
-      - LLM_SERVICE_URL=http://llm:8001
-      - RAG_SERVICE_URL=http://rag:8002
-    depends_on:
-      - llm
-      - postgres
-    networks:
-      - flow-network
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: flow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d flow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  llm:
+  llm-service:
     build:
       context: ./services/llm
       dockerfile: Dockerfile
+    container_name: flow-llm
     ports:
       - "8001:8001"
     environment:
-      - LLM_HOST=0.0.0.0
-      - LLM_PORT=8001
-      - LLM_NUM_WORKERS=2
-    volumes:
-      - model-cache:/app/model_cache
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    networks:
-      - flow-network
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
-  node-service:
+  go-server:
     build:
-      context: ./services/node
+      context: .
       dockerfile: Dockerfile
+    container_name: flow-server
     ports:
-      - "3001:3001"
+      - "8090:8090"
     environment:
-      - PORT=3001
-      - GO_ORCHESTRATOR_URL=http://orchestrator:8080
-      - LLM_SERVICE_URL=http://llm:8001
+      - PORT=8090
+      - LLM_SERVICE_URL=http://llm-service:8001
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_DATABASE=flow
+      - PG_USER=postgres
+      - PG_PASSWORD=postgres
     depends_on:
-      - orchestrator
-    networks:
-      - flow-network
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "5173:80"
-    depends_on:
-      - orchestrator
-    networks:
-      - flow-network
-
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      - POSTGRES_DB=flow
-      - POSTGRES_USER=flow
-      - POSTGRES_PASSWORD=flow
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - flow-network
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    networks:
-      - flow-network
+      postgres:
+        condition: service_healthy
+      llm-service:
+        condition: service_healthy
 
 volumes:
-  postgres-data:
-  redis-data:
-  model-cache:
-
-networks:
-  flow-network:
-    driver: bridge
+  postgres_data:

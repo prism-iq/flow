@@ -1,0 +1,27 @@
+# Build artifacts
+bin/
+native/cpp/build/
+
+# Virtual environments
+services/llm/venv/
+**/__pycache__/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# Logs
+*.log
+
+# Local config
+.env.local

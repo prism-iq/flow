@@ -1,12 +1,6 @@
-fastapi>=0.109.0
-uvicorn>=0.27.0
+fastapi>=0.104.0
+uvicorn>=0.24.0
 pydantic>=2.5.0
-torch>=2.1.0
-transformers>=4.36.0
-accelerate>=0.25.0
-bitsandbytes>=0.41.0
-safetensors>=0.4.0
-httpx>=0.26.0
-asyncio-pool>=0.6.0
-numpy>=1.26.0
+pydantic-settings>=2.1.0
+httpx>=0.25.0
 python-multipart>=0.0.6
