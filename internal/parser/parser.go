@@ -224,6 +224,26 @@ type Pipe struct {
 
 func (Pipe) expr() {}
 
+type ReadFile struct {
+	Path Expression
+}
+
+func (ReadFile) expr() {}
+
+type EnvVar struct {
+	Name Expression
+}
+
+func (EnvVar) expr() {}
+
+type WriteFile struct {
+	Content Expression
+	Path    Expression
+	Append  bool
+}
+
+func (WriteFile) stmt() {}
+
 // Parser
 
 type Parser struct {
@@ -425,6 +445,10 @@ func (p *Parser) parseStatement() (Statement, error) {
 		return p.parseReturn()
 	case lexer.SAY:
 		return p.parseSay()
+	case lexer.WRITE:
+		return p.parseWriteFile(false)
+	case lexer.APPEND:
+		return p.parseWriteFile(true)
 	case lexer.SKIP:
 		p.advance()
 		return Skip{}, nil
@@ -603,6 +627,26 @@ func (p *Parser) parseSay() (Statement, error) {
 	}
 
 	return Say{Value: val}, nil
+}
+
+func (p *Parser) parseWriteFile(appendMode bool) (Statement, error) {
+	p.advance() // consume 'write' or 'append'
+
+	content, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	if !p.match(lexer.TO) {
+		return nil, p.error("expected 'to' after content in write/append")
+	}
+
+	path, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	return WriteFile{Content: content, Path: path, Append: appendMode}, nil
 }
 
 func (p *Parser) parseIdentStatement() (Statement, error) {
@@ -876,6 +920,22 @@ func (p *Parser) parsePrimary() (Expression, error) {
 			return nil, p.error("expected field name after 'my'")
 		}
 		return MyAccess{Field: field}, nil
+
+	case lexer.READ:
+		p.advance() // consume 'read'
+		path, err := p.parseArgument()
+		if err != nil {
+			return nil, err
+		}
+		return ReadFile{Path: path}, nil
+
+	case lexer.ENV:
+		p.advance() // consume 'env'
+		name, err := p.parseArgument()
+		if err != nil {
+			return nil, err
+		}
+		return EnvVar{Name: name}, nil
 
 	case lexer.IDENT, lexer.A:
 		name := p.current().Value

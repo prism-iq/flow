@@ -1,6 +1,6 @@
 # Claude Context - Flow Programming Language
 
-**Version:** 0.5.0 (Full Local - No API)
+**Version:** 0.6.0 (Full Local - No API)
 **Repository:** https://github.com/prism-iq/flow
 
 ---
@@ -64,6 +64,10 @@ hello.flow → [Parser] → [AST] → [Codegen] → hello.cpp → [g++] → ./he
 | `[x*2 for each x in items]` | list comprehension |
 | `[x for each x in 1 to 10 where x > 5]` | filtered comprehension |
 | `value \| func` | piping (func(value)) |
+| `read "file.txt"` | read file content |
+| `write content to "file.txt"` | write to file |
+| `append content to "file.txt"` | append to file |
+| `env "HOME"` | get environment variable |
 
 ---
 
@@ -193,6 +197,32 @@ result is 5 | twice | square
 auto result = square(twice(5));
 ```
 
+### File I/O
+
+```flow
+write "Hello" to "output.txt"
+append "\nWorld" to "output.txt"
+content is read "output.txt"
+```
+→
+```cpp
+{ std::ofstream _f("output.txt"); _f << "Hello"; }
+{ std::ofstream _f("output.txt", std::ios::app); _f << "\nWorld"; }
+auto content = /* lambda reading file */;
+```
+
+### Environment Variables
+
+```flow
+home is env "HOME"
+user is env "USER"
+```
+→
+```cpp
+auto home = std::getenv("HOME");
+auto user = std::getenv("USER");
+```
+
 ---
 
 ## Entry Point
@@ -245,7 +275,7 @@ flow show hello.flow     # Show generated C++
 
 ## TL;DR for Flow Syntax
 
-Flow v0.5 uses natural English:
+Flow v0.6 uses natural English:
 - `name is "x"` = assignment
 - `x becomes y` = reassignment
 - `to do something:` = function
@@ -261,6 +291,8 @@ Flow v0.5 uses natural English:
 - `{x}` = interpolation
 - `[expr for each x in items]` = list comprehension
 - `value | func` = piping
+- `read/write/append` = file I/O
+- `env "VAR"` = environment variable
 
 **Generates valid C++20.**
 

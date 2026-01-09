@@ -1,0 +1,13 @@
+// fileio.flow - File I/O example
+
+to start:
+    // Write to file
+    write "Hello from Flow!\n" to "/tmp/flow-test.txt"
+
+    // Append to file
+    append "Second line\n" to "/tmp/flow-test.txt"
+
+    // Read file
+    content is read "/tmp/flow-test.txt"
+    say "File content:"
+    say content

@@ -42,6 +42,9 @@ func (g *Generator) Generate(prog *parser.Program) (string, error) {
 	g.writeln("#include <string>")
 	g.writeln("#include <vector>")
 	g.writeln("#include <type_traits>")
+	g.writeln("#include <fstream>")
+	g.writeln("#include <sstream>")
+	g.writeln("#include <cstdlib>")
 	g.writeln("")
 
 	// Generate structs with methods
@@ -145,6 +148,8 @@ func (g *Generator) genStatement(stmt parser.Statement) {
 		g.writeln("continue;")
 	case parser.Stop:
 		g.writeln("break;")
+	case parser.WriteFile:
+		g.genWriteFile(s)
 	case parser.ExprStmt:
 		g.writeln("%s;", g.genExpr(s.Expr))
 	}
@@ -241,6 +246,16 @@ func (g *Generator) genReassign(s parser.Reassign) {
 	g.writeln("%s = %s;", s.Name, g.genExpr(s.Value))
 }
 
+func (g *Generator) genWriteFile(s parser.WriteFile) {
+	path := g.genExpr(s.Path)
+	content := g.genExpr(s.Content)
+	if s.Append {
+		g.writeln("{ std::ofstream _f(%s, std::ios::app); _f << %s; }", path, content)
+	} else {
+		g.writeln("{ std::ofstream _f(%s); _f << %s; }", path, content)
+	}
+}
+
 func (g *Generator) genExpr(expr parser.Expression) string {
 	switch e := expr.(type) {
 	case parser.BinaryOp:
@@ -282,9 +297,25 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 		return g.genListComprehension(e)
 	case parser.Pipe:
 		return g.genPipe(e)
+	case parser.ReadFile:
+		return g.genReadFile(e)
+	case parser.EnvVar:
+		return g.genEnvVar(e)
 	default:
 		return "/* unknown expr */"
 	}
+}
+
+func (g *Generator) genReadFile(rf parser.ReadFile) string {
+	// Read entire file into string using stringstream
+	path := g.genExpr(rf.Path)
+	return fmt.Sprintf("[&]() { std::ifstream _f(%s); std::stringstream _ss; _ss << _f.rdbuf(); return _ss.str(); }()", path)
+}
+
+func (g *Generator) genEnvVar(ev parser.EnvVar) string {
+	name := g.genExpr(ev.Name)
+	// std::getenv returns nullptr if not found, so handle that
+	return fmt.Sprintf("[&]() { const char* _v = std::getenv(%s); return _v ? std::string(_v) : std::string(); }()", name)
 }
 
 func (g *Generator) genListComprehension(lc parser.ListComprehension) string {

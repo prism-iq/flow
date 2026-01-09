@@ -52,6 +52,10 @@ const (
 	AT
 	WHERE
 	THEN
+	READ
+	WRITE
+	APPEND
+	ENV
 
 	// Operators
 	PLUS
@@ -109,6 +113,10 @@ var keywords = map[string]TokenType{
 	"at":        AT,
 	"where":     WHERE,
 	"then":      THEN,
+	"read":      READ,
+	"write":     WRITE,
+	"append":    APPEND,
+	"env":       ENV,
 }
 
 type Token struct {

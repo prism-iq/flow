@@ -1,0 +1,20 @@
+// envvars.flow - Environment variables example
+
+to start:
+    // Get HOME environment variable
+    home is env "HOME"
+    say "Home directory:"
+    say home
+
+    // Get USER environment variable
+    user is env "USER"
+    say "Current user:"
+    say user
+
+    // Get PATH (just show it exists)
+    path is env "PATH"
+    say "PATH is set:"
+    if path is "":
+        say "no"
+    otherwise:
+        say "yes"
