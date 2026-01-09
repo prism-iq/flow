@@ -20,7 +20,12 @@ add_library(flow_synapses
     src/tensor.cpp
     src/memory_pool.cpp
     src/ffi_bridge.cpp
+    src/pattern_matcher.cpp
+    src/pattern_ffi.cpp
 )
+
+find_package(Threads REQUIRED)
+target_link_libraries(flow_synapses PRIVATE Threads::Threads)
 
 target_include_directories(flow_synapses PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

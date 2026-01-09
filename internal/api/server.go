@@ -45,6 +45,9 @@ func (s *Server) setupRoutes() {
 		RegisterChatRoutes(api, s.hub, s.log, s.cfg)
 		RegisterHealthRoutes(api, s.hub)
 		RegisterConversationRoutes(api, s.log)
+		RegisterPipelineRoutes(api, s.cfg, s.log)
+		RegisterFastExtractRoutes(api, s.log)
+		RegisterGraphRoutes(api, s.log)
 	}
 
 	s.router.GET("/ws", s.handleWebSocket)

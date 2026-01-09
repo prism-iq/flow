@@ -6,8 +6,16 @@ from contextlib import asynccontextmanager
 
 from .config import settings
 from .routes import router
-from .pipeline.manager import PipelineManager
+from .routes_extraction import router as extraction_router
 from .utils.logger import logger
+
+try:
+    from .pipeline.manager import PipelineManager
+    USE_MOCK = False
+except ImportError:
+    from .pipeline.mock_manager import MockPipelineManager as PipelineManager
+    USE_MOCK = True
+    logger.warning("torch not available, using mock pipeline manager")
 
 
 pipeline_manager: PipelineManager = None
@@ -41,6 +49,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(extraction_router)
 
 
 def main():
