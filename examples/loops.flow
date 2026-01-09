@@ -1,0 +1,28 @@
+// loops.flow - Different loop styles
+
+do main:
+    // Range loop
+    say "Counting to 5:"
+    each i in 1..=5:
+        say i
+
+    say "---"
+
+    // While loop
+    say "Countdown:"
+    vary x = 5
+    while x > 0:
+        say x
+        x = x - 1
+    say "Boom!"
+
+    say "---"
+
+    // Loop with skip and stop
+    say "Odds only, stop at 7:"
+    each i in 1..10:
+        if i % 2 == 0:
+            skip
+        if i > 7:
+            stop
+        say i

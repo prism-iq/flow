@@ -1,0 +1,11 @@
+// fibonacci.flow - Recursive Fibonacci with pattern matching
+
+do fib(n):
+    if n <= 1:
+        give n
+    give fib(n - 1) + fib(n - 2)
+
+do main:
+    say "Fibonacci sequence:"
+    each i in 0..10:
+        say fib(i)

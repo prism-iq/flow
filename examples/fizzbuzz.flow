@@ -1,0 +1,12 @@
+// fizzbuzz.flow - Classic FizzBuzz
+
+do main:
+    each i in 1..=30:
+        if i % 15 == 0:
+            say "FizzBuzz"
+        else if i % 3 == 0:
+            say "Fizz"
+        else if i % 5 == 0:
+            say "Buzz"
+        else:
+            say i

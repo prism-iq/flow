@@ -1,0 +1,4 @@
+// hello.flow - The simplest Flow program
+
+do main:
+    say "Hello, World!"

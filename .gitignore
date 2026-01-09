@@ -1,0 +1,42 @@
+# Binary
+/flow
+
+# Cache
+/cache/
+
+# Environment
+.env
+
+# Compiled examples
+/examples/*.cpp
+/examples/hello
+/examples/fibonacci
+/examples/loop
+/examples/loops
+/examples/fizzbuzz
+/examples/greeting
+/examples/math
+/examples/conditions
+/examples/variables
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

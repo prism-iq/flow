@@ -1,0 +1,33 @@
+// conditions.flow - Logic with natural words
+
+do check_age(age):
+    if age < 0:
+        say "Invalid age"
+    else if age < 13:
+        say "Child"
+    else if age < 20:
+        say "Teenager"
+    else if age < 65:
+        say "Adult"
+    else:
+        say "Senior"
+
+do check_access(logged_in, is_admin):
+    if logged_in and is_admin:
+        say "Full access"
+    else if logged_in and not is_admin:
+        say "Limited access"
+    else:
+        say "No access"
+
+do main:
+    check_age(8)
+    check_age(16)
+    check_age(35)
+    check_age(70)
+
+    say "---"
+
+    check_access(yes, yes)
+    check_access(yes, no)
+    check_access(no, no)
