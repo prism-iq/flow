@@ -1,0 +1,16 @@
+// async.flow - Concurrent execution
+
+to slow_task name:
+    say "Starting task: {name}"
+    return name
+
+to start:
+    say "Running tasks concurrently..."
+
+    // Execute multiple tasks in parallel
+    do together:
+        say "Task A running"
+        say "Task B running"
+        say "Task C running"
+
+    say "All tasks completed!"

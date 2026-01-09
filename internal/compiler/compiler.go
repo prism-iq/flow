@@ -81,6 +81,9 @@ func (c *Compiler) compile(cppFile, binFile string) error {
 		"-std="+c.cfg.CppStd,
 		"-o", binFile,
 		cppFile,
+		"-pthread",      // For std::thread and async
+		"-lssl",         // OpenSSL SSL library
+		"-lcrypto",      // OpenSSL crypto library (SHA, MD5)
 	)
 
 	output, err := cmd.CombinedOutput()

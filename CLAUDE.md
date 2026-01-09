@@ -1,6 +1,6 @@
 # Claude Context - Flow Programming Language
 
-**Version:** 0.9.0 (Full Local - No API)
+**Version:** 1.0.0 (Full Local - No API)
 **Repository:** https://github.com/prism-iq/flow
 
 ---
@@ -77,6 +77,26 @@ hello.flow → [Parser] → [AST] → [Codegen] → hello.cpp → [g++] → ./he
 | `items to 3` | slice from start |
 | `yield x` | generator yield |
 | `@decorator` | function decorator |
+| `fetch "url"` | HTTP GET request |
+| `parse json` | parse JSON string |
+| `stringify value` | convert to string |
+| `match "pattern" in text` | regex match (bool) |
+| `find "pattern" in text` | regex find all |
+| `replace "pattern" in text with "new"` | regex replace |
+| `hash sha256 value` | SHA256 hash |
+| `hash md5 value` | MD5 hash |
+| `hash sha1 value` | SHA1 hash |
+| `wait expr` | async await |
+| `do together:` | concurrent block |
+| `connect "ws://..."` | WebSocket connect |
+| `send msg to socket` | WebSocket send |
+| `log info "msg"` | info logging |
+| `log warn "msg"` | warning logging |
+| `log error "msg"` | error logging |
+| `test "name":` | test block |
+| `assert cond, "msg"` | assertion |
+| `try: ... catch e:` | error handling |
+| `throw "error"` | throw exception |
 
 ---
 
@@ -328,6 +348,114 @@ auto _get_value_impl(auto x) { return x + 1; }
 auto get_value(auto x) { return doubled(_get_value_impl(x)); }
 ```
 
+### HTTP Client
+
+```flow
+response is fetch "http://api.example.com/data"
+say response
+```
+→
+```cpp
+// Uses POSIX sockets for HTTP GET request
+auto response = /* socket-based HTTP fetch */;
+```
+
+### Regex
+
+```flow
+if match "[0-9]+" in text:
+    say "Found numbers"
+
+matches is find "[a-z]+" in text
+cleaned is replace "[0-9]+" in text with "X"
+```
+→
+```cpp
+if (std::regex_search(text, std::regex("[0-9]+"))) { ... }
+auto matches = /* sregex_iterator loop */;
+auto cleaned = std::regex_replace(text, std::regex("[0-9]+"), "X");
+```
+
+### Hashing
+
+```flow
+sha is hash sha256 "hello"
+md is hash md5 "hello"
+```
+→
+```cpp
+// Uses OpenSSL
+auto sha = /* SHA256 computation */;
+auto md = /* MD5 computation */;
+```
+
+### Concurrent Execution
+
+```flow
+do together:
+    task1
+    task2
+    task3
+```
+→
+```cpp
+{
+    std::vector<std::thread> _threads;
+    _threads.emplace_back([&]() { task1; });
+    _threads.emplace_back([&]() { task2; });
+    _threads.emplace_back([&]() { task3; });
+    for (auto& t : _threads) t.join();
+}
+```
+
+### Logging
+
+```flow
+log info "Application started"
+log warn "Low memory"
+log error "Connection failed"
+```
+→
+```cpp
+// Outputs: 2024-01-15 10:30:45 [INFO] Application started
+std::cerr << timestamp << " [INFO] " << msg << std::endl;
+```
+
+### Testing
+
+```flow
+test "addition works":
+    result is add 2 and 3
+    assert result == 5, "2 + 3 should be 5"
+```
+→
+```cpp
+void test_addition_works() {
+    auto result = add(2, 3);
+    if (!(result == 5)) {
+        std::cerr << "Assertion failed: 2 + 3 should be 5";
+        std::abort();
+    }
+}
+```
+
+### Error Handling
+
+```flow
+try:
+    result is risky_operation
+catch e:
+    say "Error occurred"
+```
+→
+```cpp
+try {
+    auto result = risky_operation();
+} catch (const std::exception& e) {
+    std::cout << "Error occurred" << std::endl;
+}
+```
+
 ---
 
 ## Entry Point
@@ -380,7 +508,9 @@ flow show hello.flow     # Show generated C++
 
 ## TL;DR for Flow Syntax
 
-Flow v0.9 uses natural English:
+Flow v1.0 uses natural English:
+
+**Core:**
 - `name is "x"` = assignment
 - `x becomes y` = reassignment
 - `to do something:` = function
@@ -394,19 +524,53 @@ Flow v0.9 uses natural English:
 - `and/or/not` = &&/||/!
 - `say` = print
 - `{x}` = interpolation
+
+**Collections:**
 - `[expr for each x in items]` = list comprehension
 - `value | func` = piping
+- `items from 1 to 5` = slicing
+
+**I/O:**
 - `read/write/append` = file I/O
 - `env "VAR"` = environment variable
 - `run "cmd"` = shell command
+
+**Functions:**
 - `return a and b` = multiple returns
 - `x, y is func` = unpacking
-- `using x is open:` = context manager
-- `items from 1 to 5` = slicing
 - `yield x` = generator
 - `@decorator` = function decorator
+- `using x is open:` = context manager
 
-**Generates valid C++20.**
+**Networking (v1.0):**
+- `fetch "url"` = HTTP GET
+- `connect "ws://..."` = WebSocket
+- `send msg to socket` = WebSocket send
+
+**Regex (v1.0):**
+- `match "pattern" in text` = regex test
+- `find "pattern" in text` = find all matches
+- `replace "pattern" in text with "new"` = replace
+
+**Crypto (v1.0):**
+- `hash sha256/md5/sha1 value` = cryptographic hash
+
+**Concurrency (v1.0):**
+- `wait expr` = async await
+- `do together:` = parallel execution
+
+**Testing (v1.0):**
+- `test "name":` = test block
+- `assert cond, "msg"` = assertion
+
+**Error Handling (v1.0):**
+- `try: ... catch e:` = exception handling
+- `throw "error"` = raise exception
+
+**Logging (v1.0):**
+- `log info/warn/error "msg"` = structured logging
+
+**Generates valid C++20. Links with OpenSSL and pthreads.**
 
 ---
 

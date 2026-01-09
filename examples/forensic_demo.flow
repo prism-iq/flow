@@ -1,0 +1,44 @@
+// forensic_demo.flow - Forensic analysis demo
+
+to analyze_file path:
+    say "Analyzing: {path}"
+    content is read path
+    file_hash is hash sha256 content
+    say "SHA256: {file_hash}"
+    return file_hash
+
+to search_for pattern and text:
+    matches is find pattern in text
+    return matches
+
+to start:
+    say "=== Forensic Analysis Demo ==="
+    log info "Starting forensic analysis"
+
+    // Hash verification
+    say "--- File Hash Analysis ---"
+    hash1 is analyze_file "/etc/hostname"
+
+    // Pattern search (simulating log analysis)
+    say "--- Log Pattern Search ---"
+    sample_log is "ERROR 2024-01-15 Failed login from 192.168.1.100\nINFO 2024-01-15 User logged in\nERROR 2024-01-15 Failed login from 10.0.0.50"
+
+    // Find all IP addresses
+    ips is search_for "[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+" and sample_log
+    say "IP addresses found:"
+    for each ip in ips:
+        say ip
+
+    // Find all errors
+    if match "ERROR" in sample_log:
+        log warn "Errors detected in log file"
+
+    // Concurrent analysis
+    say "--- Parallel Analysis ---"
+    do together:
+        log info "Scanning files..."
+        log info "Checking hashes..."
+        log info "Analyzing patterns..."
+
+    log info "Analysis complete"
+    say "=== Done ==="

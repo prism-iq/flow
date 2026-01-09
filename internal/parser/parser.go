@@ -1,3 +1,5 @@
+// Package parser provides AST construction for the Flow programming language.
+// It implements a recursive descent parser for Flow's natural-English syntax.
 package parser
 
 import (
@@ -7,16 +9,22 @@ import (
 	"flow/internal/lexer"
 )
 
-// AST Types
+// ==================== AST TYPES ====================
 
+// Program is the root AST node containing all top-level statements.
 type Program struct {
 	Statements []Statement
 }
 
-type Statement interface {
-	stmt()
-}
+// Statement is the interface for all statement nodes.
+type Statement interface{ stmt() }
 
+// Expression is the interface for all expression nodes.
+type Expression interface{ expr() }
+
+// -------------------- Core Statements --------------------
+
+// Function represents a function definition.
 type Function struct {
 	Name   string
 	Params []string
@@ -25,6 +33,40 @@ type Function struct {
 
 func (Function) stmt() {}
 
+// Return represents a return statement.
+type Return struct {
+	Value Expression
+}
+
+func (Return) stmt() {}
+
+// Assignment represents variable assignment (name is value).
+type Assignment struct {
+	Name    string
+	Value   Expression
+	Mutable bool
+}
+
+func (Assignment) stmt() {}
+
+// Reassign represents variable reassignment (name becomes value).
+type Reassign struct {
+	Name  string
+	Value Expression
+}
+
+func (Reassign) stmt() {}
+
+// ExprStmt wraps an expression as a statement.
+type ExprStmt struct {
+	Expr Expression
+}
+
+func (ExprStmt) stmt() {}
+
+// -------------------- Struct/Method Statements --------------------
+
+// Struct represents a struct definition.
 type Struct struct {
 	Name   string
 	Fields []Field
@@ -32,11 +74,13 @@ type Struct struct {
 
 func (Struct) stmt() {}
 
+// Field represents a struct field.
 type Field struct {
 	Name string
 	Type string
 }
 
+// Method represents a method definition.
 type Method struct {
 	Struct string
 	Name   string
@@ -45,6 +89,9 @@ type Method struct {
 
 func (Method) stmt() {}
 
+// -------------------- Control Flow Statements --------------------
+
+// If represents an if statement with optional else-if and else.
 type If struct {
 	Condition Expression
 	Then      []Statement
@@ -54,11 +101,13 @@ type If struct {
 
 func (If) stmt() {}
 
+// ElseIf represents an else-if clause.
 type ElseIf struct {
 	Condition Expression
 	Then      []Statement
 }
 
+// ForEach represents a for-each loop.
 type ForEach struct {
 	Var   string
 	Start Expression
@@ -68,6 +117,7 @@ type ForEach struct {
 
 func (ForEach) stmt() {}
 
+// Repeat represents a repeat-n-times loop.
 type Repeat struct {
 	Count int
 	Body  []Statement
@@ -75,6 +125,7 @@ type Repeat struct {
 
 func (Repeat) stmt() {}
 
+// While represents a while loop.
 type While struct {
 	Condition Expression
 	Body      []Statement
@@ -82,160 +133,26 @@ type While struct {
 
 func (While) stmt() {}
 
-type Return struct {
-	Value Expression
-}
+// Skip represents a continue statement.
+type Skip struct{}
 
-func (Return) stmt() {}
+func (Skip) stmt() {}
 
+// Stop represents a break statement.
+type Stop struct{}
+
+func (Stop) stmt() {}
+
+// -------------------- I/O Statements --------------------
+
+// Say represents a print statement.
 type Say struct {
 	Value Expression
 }
 
 func (Say) stmt() {}
 
-type Assignment struct {
-	Name    string
-	Value   Expression
-	Mutable bool
-}
-
-func (Assignment) stmt() {}
-
-type Reassign struct {
-	Name  string
-	Value Expression
-}
-
-func (Reassign) stmt() {}
-
-type Skip struct{}
-
-func (Skip) stmt() {}
-
-type Stop struct{}
-
-func (Stop) stmt() {}
-
-type ExprStmt struct {
-	Expr Expression
-}
-
-func (ExprStmt) stmt() {}
-
-// Expressions
-
-type Expression interface {
-	expr()
-}
-
-type BinaryOp struct {
-	Left  Expression
-	Op    string
-	Right Expression
-}
-
-func (BinaryOp) expr() {}
-
-type UnaryOp struct {
-	Op    string
-	Value Expression
-}
-
-func (UnaryOp) expr() {}
-
-type IntLit struct {
-	Value int
-}
-
-func (IntLit) expr() {}
-
-type FloatLit struct {
-	Value float64
-}
-
-func (FloatLit) expr() {}
-
-type StringLit struct {
-	Value string
-}
-
-func (StringLit) expr() {}
-
-type BoolLit struct {
-	Value bool
-}
-
-func (BoolLit) expr() {}
-
-type Ident struct {
-	Name string
-}
-
-func (Ident) expr() {}
-
-type MyAccess struct {
-	Field string
-}
-
-func (MyAccess) expr() {}
-
-type Access struct {
-	Object Expression
-	Field  string
-}
-
-func (Access) expr() {}
-
-type Index struct {
-	Object Expression
-	Index  Expression
-}
-
-func (Index) expr() {}
-
-type Call struct {
-	Func Expression
-	Args []Expression
-}
-
-func (Call) expr() {}
-
-type List struct {
-	Elements []Expression
-}
-
-func (List) expr() {}
-
-type ListComprehension struct {
-	Expr      Expression // The expression to evaluate for each item
-	Var       string     // Loop variable name
-	Start     Expression // Collection or range start
-	End       Expression // Range end (nil for collection iteration)
-	Condition Expression // Optional filter condition (where clause)
-}
-
-func (ListComprehension) expr() {}
-
-type Pipe struct {
-	Left  Expression
-	Right Expression // Function name to apply
-}
-
-func (Pipe) expr() {}
-
-type ReadFile struct {
-	Path Expression
-}
-
-func (ReadFile) expr() {}
-
-type EnvVar struct {
-	Name Expression
-}
-
-func (EnvVar) expr() {}
-
+// WriteFile represents file writing.
 type WriteFile struct {
 	Content Expression
 	Path    Expression
@@ -244,18 +161,9 @@ type WriteFile struct {
 
 func (WriteFile) stmt() {}
 
-type RunCommand struct {
-	Command Expression
-}
+// -------------------- Advanced Statements --------------------
 
-func (RunCommand) expr() {}
-
-type TupleExpr struct {
-	Elements []Expression
-}
-
-func (TupleExpr) expr() {}
-
+// UnpackAssign represents unpacking assignment (a, b is func).
 type UnpackAssign struct {
 	Names   []string
 	Value   Expression
@@ -264,6 +172,7 @@ type UnpackAssign struct {
 
 func (UnpackAssign) stmt() {}
 
+// Using represents a context manager block.
 type Using struct {
 	Name string
 	Expr Expression
@@ -272,27 +181,14 @@ type Using struct {
 
 func (Using) stmt() {}
 
-type OpenFile struct {
-	Path Expression
-	Mode string // "read", "write", "append"
-}
-
-func (OpenFile) expr() {}
-
-type Slice struct {
-	Object Expression
-	Start  Expression // nil means from beginning
-	End    Expression // nil means to end
-}
-
-func (Slice) expr() {}
-
+// Yield represents a generator yield.
 type Yield struct {
 	Value Expression
 }
 
 func (Yield) stmt() {}
 
+// Decorator represents a decorated function.
 type Decorator struct {
 	Name     string
 	Function Function
@@ -300,34 +196,334 @@ type Decorator struct {
 
 func (Decorator) stmt() {}
 
-// Parser
+// -------------------- v1.0 Statements --------------------
 
+// DoTogether represents concurrent execution.
+type DoTogether struct {
+	Body []Statement
+}
+
+func (DoTogether) stmt() {}
+
+// WebSocketSend represents sending to a WebSocket.
+type WebSocketSend struct {
+	Socket  Expression
+	Message Expression
+}
+
+func (WebSocketSend) stmt() {}
+
+// Log represents structured logging.
+type Log struct {
+	Level   string // info, warn, error
+	Message Expression
+}
+
+func (Log) stmt() {}
+
+// Test represents a test block.
+type Test struct {
+	Name string
+	Body []Statement
+}
+
+func (Test) stmt() {}
+
+// Assert represents an assertion.
+type Assert struct {
+	Condition Expression
+	Message   Expression
+}
+
+func (Assert) stmt() {}
+
+// Try represents error handling.
+type Try struct {
+	Body    []Statement
+	Catch   []Statement
+	ErrName string
+}
+
+func (Try) stmt() {}
+
+// Throw represents throwing an exception.
+type Throw struct {
+	Message Expression
+}
+
+func (Throw) stmt() {}
+
+// ==================== EXPRESSIONS ====================
+
+// -------------------- Literals --------------------
+
+// IntLit represents an integer literal.
+type IntLit struct {
+	Value int
+}
+
+func (IntLit) expr() {}
+
+// FloatLit represents a float literal.
+type FloatLit struct {
+	Value float64
+}
+
+func (FloatLit) expr() {}
+
+// StringLit represents a string literal.
+type StringLit struct {
+	Value string
+}
+
+func (StringLit) expr() {}
+
+// BoolLit represents a boolean literal.
+type BoolLit struct {
+	Value bool
+}
+
+func (BoolLit) expr() {}
+
+// -------------------- Identifiers and Access --------------------
+
+// Ident represents an identifier.
+type Ident struct {
+	Name string
+}
+
+func (Ident) expr() {}
+
+// MyAccess represents self field access (my field).
+type MyAccess struct {
+	Field string
+}
+
+func (MyAccess) expr() {}
+
+// Access represents field access (obj's field).
+type Access struct {
+	Object Expression
+	Field  string
+}
+
+func (Access) expr() {}
+
+// Index represents array indexing.
+type Index struct {
+	Object Expression
+	Index  Expression
+}
+
+func (Index) expr() {}
+
+// -------------------- Operations --------------------
+
+// BinaryOp represents a binary operation.
+type BinaryOp struct {
+	Left  Expression
+	Op    string
+	Right Expression
+}
+
+func (BinaryOp) expr() {}
+
+// UnaryOp represents a unary operation.
+type UnaryOp struct {
+	Op    string
+	Value Expression
+}
+
+func (UnaryOp) expr() {}
+
+// -------------------- Collections --------------------
+
+// List represents a list literal.
+type List struct {
+	Elements []Expression
+}
+
+func (List) expr() {}
+
+// ListComprehension represents a list comprehension.
+type ListComprehension struct {
+	Expr      Expression
+	Var       string
+	Start     Expression
+	End       Expression
+	Condition Expression
+}
+
+func (ListComprehension) expr() {}
+
+// Slice represents list slicing.
+type Slice struct {
+	Object Expression
+	Start  Expression
+	End    Expression
+}
+
+func (Slice) expr() {}
+
+// TupleExpr represents a tuple (for multiple returns).
+type TupleExpr struct {
+	Elements []Expression
+}
+
+func (TupleExpr) expr() {}
+
+// -------------------- Function Calls --------------------
+
+// Call represents a function call.
+type Call struct {
+	Func Expression
+	Args []Expression
+}
+
+func (Call) expr() {}
+
+// Pipe represents piping (value | func).
+type Pipe struct {
+	Left  Expression
+	Right Expression
+}
+
+func (Pipe) expr() {}
+
+// -------------------- I/O Expressions --------------------
+
+// ReadFile represents reading a file.
+type ReadFile struct {
+	Path Expression
+}
+
+func (ReadFile) expr() {}
+
+// EnvVar represents environment variable access.
+type EnvVar struct {
+	Name Expression
+}
+
+func (EnvVar) expr() {}
+
+// RunCommand represents shell command execution.
+type RunCommand struct {
+	Command Expression
+}
+
+func (RunCommand) expr() {}
+
+// OpenFile represents opening a file.
+type OpenFile struct {
+	Path Expression
+	Mode string
+}
+
+func (OpenFile) expr() {}
+
+// -------------------- v1.0 Expressions --------------------
+
+// Fetch represents an HTTP GET request.
+type Fetch struct {
+	URL     Expression
+	Method  string
+	Body    Expression
+	Headers map[string]string
+}
+
+func (Fetch) expr() {}
+
+// ParseJSON represents JSON parsing.
+type ParseJSON struct {
+	Value Expression
+}
+
+func (ParseJSON) expr() {}
+
+// StringifyJSON represents JSON stringification.
+type StringifyJSON struct {
+	Value Expression
+}
+
+func (StringifyJSON) expr() {}
+
+// RegexMatch represents regex matching.
+type RegexMatch struct {
+	Pattern Expression
+	Text    Expression
+}
+
+func (RegexMatch) expr() {}
+
+// RegexFindAll represents finding all regex matches.
+type RegexFindAll struct {
+	Pattern Expression
+	Text    Expression
+}
+
+func (RegexFindAll) expr() {}
+
+// RegexReplace represents regex replacement.
+type RegexReplace struct {
+	Pattern     Expression
+	Text        Expression
+	Replacement Expression
+}
+
+func (RegexReplace) expr() {}
+
+// Hash represents cryptographic hashing.
+type Hash struct {
+	Algorithm string
+	Value     Expression
+}
+
+func (Hash) expr() {}
+
+// Wait represents async await.
+type Wait struct {
+	Expr Expression
+}
+
+func (Wait) expr() {}
+
+// WebSocketConnect represents WebSocket connection.
+type WebSocketConnect struct {
+	URL Expression
+}
+
+func (WebSocketConnect) expr() {}
+
+// ==================== PARSER ====================
+
+// Parser parses Flow source code into an AST.
 type Parser struct {
 	tokens []lexer.Token
 	pos    int
 }
 
+// New creates a new Parser for the given tokens.
 func New(tokens []lexer.Token) *Parser {
-	return &Parser{tokens: tokens, pos: 0}
+	return &Parser{tokens: tokens}
 }
 
+// Parse parses Flow source code and returns an AST.
 func Parse(source string) (*Program, error) {
 	l := lexer.New(source)
 	tokens, err := l.Tokenize()
 	if err != nil {
 		return nil, err
 	}
-
-	p := New(tokens)
-	return p.Parse()
+	return New(tokens).Parse()
 }
 
+// Parse parses tokens into a Program AST.
 func (p *Parser) Parse() (*Program, error) {
 	prog := &Program{}
 
-	for !p.isAtEnd() {
+	for !p.atEnd() {
 		p.skipNewlines()
-		if p.isAtEnd() {
+		if p.atEnd() {
 			break
 		}
 
@@ -343,57 +539,70 @@ func (p *Parser) Parse() (*Program, error) {
 	return prog, nil
 }
 
-func (p *Parser) parseTopLevel() (Statement, error) {
-	// Check for decorator: @name
-	if p.match(lexer.AT_SIGN) {
-		decoratorName := p.current().Value
-		if !p.match(lexer.IDENT) {
-			return nil, p.error("expected decorator name after '@'")
-		}
-		p.skipNewlines()
+// -------------------- Top-Level Parsing --------------------
 
-		// Next must be a function definition
-		if !p.match(lexer.TO) {
-			return nil, p.error("expected 'to' after decorator")
-		}
-		fn, err := p.parseFunction()
-		if err != nil {
-			return nil, err
-		}
-		return Decorator{Name: decoratorName, Function: fn.(Function)}, nil
+func (p *Parser) parseTopLevel() (Statement, error) {
+	// Decorator
+	if p.match(lexer.AT_SIGN) {
+		return p.parseDecorator()
 	}
 
+	// Function
 	if p.match(lexer.TO) {
 		return p.parseFunction()
 	}
+
+	// Struct or Method
 	if p.match(lexer.A) {
 		return p.parseStructOrMethod()
 	}
-	return nil, p.error("expected 'to', 'a', or '@' at top level")
+
+	// Test block
+	if p.match(lexer.TEST) {
+		return p.parseTest()
+	}
+
+	return nil, p.errorf("expected 'to', 'a', 'test', or '@' at top level")
+}
+
+func (p *Parser) parseDecorator() (Statement, error) {
+	name := p.current().Value
+	if !p.match(lexer.IDENT) {
+		return nil, p.errorf("expected decorator name after '@'")
+	}
+	p.skipNewlines()
+
+	if !p.match(lexer.TO) {
+		return nil, p.errorf("expected 'to' after decorator")
+	}
+
+	fn, err := p.parseFunction()
+	if err != nil {
+		return nil, err
+	}
+
+	return Decorator{Name: name, Function: fn.(Function)}, nil
 }
 
 func (p *Parser) parseFunction() (Statement, error) {
 	name := p.current().Value
 	if !p.match(lexer.IDENT) {
-		return nil, p.error("expected function name")
+		return nil, p.errorf("expected function name")
 	}
 
-	// Parse parameters (can be separated by "and")
-	// Note: "a" is a keyword but can also be a parameter name
+	// Parse parameters
 	var params []string
 	for p.current().Type == lexer.IDENT || p.current().Type == lexer.A {
 		params = append(params, p.current().Value)
 		p.advance()
-		// Skip "and" between parameters
-		p.match(lexer.AND)
+		p.match(lexer.AND) // Skip 'and' between parameters
 	}
 
 	if !p.match(lexer.COLON) {
-		return nil, p.error("expected ':' after function signature")
+		return nil, p.errorf("expected ':' after function signature")
 	}
 
 	p.skipNewlines()
-
 	body, err := p.parseBlock()
 	if err != nil {
 		return nil, err
@@ -405,7 +614,7 @@ func (p *Parser) parseFunction() (Statement, error) {
 func (p *Parser) parseStructOrMethod() (Statement, error) {
 	name := p.current().Value
 	if !p.match(lexer.IDENT) {
-		return nil, p.error("expected struct name")
+		return nil, p.errorf("expected struct name")
 	}
 
 	if p.match(lexer.HAS) {
@@ -415,19 +624,19 @@ func (p *Parser) parseStructOrMethod() (Statement, error) {
 		return p.parseMethod(name)
 	}
 
-	return nil, p.error("expected 'has' or 'can' after struct name")
+	return nil, p.errorf("expected 'has' or 'can' after struct name")
 }
 
 func (p *Parser) parseStructFields(name string) (Statement, error) {
 	if !p.match(lexer.COLON) {
-		return nil, p.error("expected ':' after 'has'")
+		return nil, p.errorf("expected ':' after 'has'")
 	}
 
 	p.skipNewlines()
-
 	var fields []Field
+
 	if p.match(lexer.INDENT) {
-		for !p.check(lexer.DEDENT) && !p.isAtEnd() {
+		for !p.check(lexer.DEDENT) && !p.atEnd() {
 			p.skipNewlines()
 			if p.check(lexer.DEDENT) {
 				break
@@ -435,14 +644,14 @@ func (p *Parser) parseStructFields(name string) (Statement, error) {
 
 			fieldName := p.current().Value
 			if !p.match(lexer.IDENT) {
-				return nil, p.error("expected field name")
+				return nil, p.errorf("expected field name")
 			}
 			if !p.match(lexer.AS) {
-				return nil, p.error("expected 'as' after field name")
+				return nil, p.errorf("expected 'as' after field name")
 			}
 			fieldType := p.current().Value
 			if !p.match(lexer.IDENT) {
-				return nil, p.error("expected field type")
+				return nil, p.errorf("expected field type")
 			}
 
 			fields = append(fields, Field{Name: fieldName, Type: fieldType})
@@ -457,14 +666,13 @@ func (p *Parser) parseStructFields(name string) (Statement, error) {
 func (p *Parser) parseMethod(structName string) (Statement, error) {
 	methodName := p.current().Value
 	if !p.match(lexer.IDENT) {
-		return nil, p.error("expected method name")
+		return nil, p.errorf("expected method name")
 	}
 	if !p.match(lexer.COLON) {
-		return nil, p.error("expected ':' after method name")
+		return nil, p.errorf("expected ':' after method name")
 	}
 
 	p.skipNewlines()
-
 	body, err := p.parseBlock()
 	if err != nil {
 		return nil, err
@@ -473,12 +681,33 @@ func (p *Parser) parseMethod(structName string) (Statement, error) {
 	return Method{Struct: structName, Name: methodName, Body: body}, nil
 }
 
+func (p *Parser) parseTest() (Statement, error) {
+	name := ""
+	if p.current().Type == lexer.STRING {
+		name = p.current().Value
+		p.advance()
+	}
+
+	if !p.match(lexer.COLON) {
+		return nil, p.errorf("expected ':' after test name")
+	}
+
+	p.skipNewlines()
+	body, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return Test{Name: name, Body: body}, nil
+}
+
+// -------------------- Block Parsing --------------------
+
 func (p *Parser) parseBlock() ([]Statement, error) {
 	var stmts []Statement
 
 	if !p.match(lexer.INDENT) {
-		// Single statement on same line or empty
-		if p.check(lexer.NEWLINE) || p.isAtEnd() {
+		if p.check(lexer.NEWLINE) || p.atEnd() {
 			return stmts, nil
 		}
 		stmt, err := p.parseStatement()
@@ -488,7 +717,7 @@ func (p *Parser) parseBlock() ([]Statement, error) {
 		return []Statement{stmt}, nil
 	}
 
-	for !p.check(lexer.DEDENT) && !p.isAtEnd() {
+	for !p.check(lexer.DEDENT) && !p.atEnd() {
 		p.skipNewlines()
 		if p.check(lexer.DEDENT) {
 			break
@@ -506,8 +735,11 @@ func (p *Parser) parseBlock() ([]Statement, error) {
 	return stmts, nil
 }
 
+// -------------------- Statement Parsing --------------------
+
 func (p *Parser) parseStatement() (Statement, error) {
 	switch p.current().Type {
+	// Control flow
 	case lexer.IF:
 		return p.parseIf()
 	case lexer.FOR:
@@ -518,31 +750,52 @@ func (p *Parser) parseStatement() (Statement, error) {
 		return p.parseWhile()
 	case lexer.RETURN:
 		return p.parseReturn()
-	case lexer.SAY:
-		return p.parseSay()
-	case lexer.WRITE:
-		return p.parseWriteFile(false)
-	case lexer.APPEND:
-		return p.parseWriteFile(true)
-	case lexer.USING:
-		return p.parseUsing()
-	case lexer.YIELD:
-		return p.parseYield()
 	case lexer.SKIP:
 		p.advance()
 		return Skip{}, nil
 	case lexer.STOP:
 		p.advance()
 		return Stop{}, nil
+
+	// I/O
+	case lexer.SAY:
+		return p.parseSay()
+	case lexer.WRITE:
+		return p.parseWriteFile(false)
+	case lexer.APPEND:
+		return p.parseWriteFile(true)
+
+	// Advanced
+	case lexer.USING:
+		return p.parseUsing()
+	case lexer.YIELD:
+		return p.parseYield()
+
+	// v1.0
+	case lexer.LOG:
+		return p.parseLog()
+	case lexer.ASSERT:
+		return p.parseAssert()
+	case lexer.TRY:
+		return p.parseTry()
+	case lexer.THROW:
+		return p.parseThrow()
+	case lexer.DO:
+		return p.parseDoTogether()
+	case lexer.SEND:
+		return p.parseSend()
+
+	// Identifier-based statements
 	case lexer.IDENT:
 		return p.parseIdentStatement()
+
 	default:
-		return nil, p.error(fmt.Sprintf("unexpected token %v", p.current()))
+		return nil, p.errorf("unexpected token %v", p.current())
 	}
 }
 
 func (p *Parser) parseIf() (Statement, error) {
-	p.advance() // consume 'if'
+	p.advance()
 
 	cond, err := p.parseExpression()
 	if err != nil {
@@ -550,7 +803,7 @@ func (p *Parser) parseIf() (Statement, error) {
 	}
 
 	if !p.match(lexer.COLON) {
-		return nil, p.error("expected ':' after if condition")
+		return nil, p.errorf("expected ':' after if condition")
 	}
 
 	p.skipNewlines()
@@ -569,7 +822,7 @@ func (p *Parser) parseIf() (Statement, error) {
 				return nil, err
 			}
 			if !p.match(lexer.COLON) {
-				return nil, p.error("expected ':' after elif condition")
+				return nil, p.errorf("expected ':' after elif condition")
 			}
 			p.skipNewlines()
 			elifBody, err := p.parseBlock()
@@ -579,7 +832,7 @@ func (p *Parser) parseIf() (Statement, error) {
 			elseifs = append(elseifs, ElseIf{Condition: elifCond, Then: elifBody})
 		} else {
 			if !p.match(lexer.COLON) {
-				return nil, p.error("expected ':' after otherwise")
+				return nil, p.errorf("expected ':' after otherwise")
 			}
 			p.skipNewlines()
 			elseBody, err = p.parseBlock()
@@ -594,19 +847,19 @@ func (p *Parser) parseIf() (Statement, error) {
 }
 
 func (p *Parser) parseForEach() (Statement, error) {
-	p.advance() // consume 'for'
+	p.advance()
 
 	if !p.match(lexer.EACH) {
-		return nil, p.error("expected 'each' after 'for'")
+		return nil, p.errorf("expected 'each' after 'for'")
 	}
 
 	varName := p.current().Value
 	if !p.match(lexer.IDENT) {
-		return nil, p.error("expected variable name")
+		return nil, p.errorf("expected variable name")
 	}
 
 	if !p.match(lexer.IN) {
-		return nil, p.error("expected 'in' after variable name")
+		return nil, p.errorf("expected 'in' after variable name")
 	}
 
 	start, err := p.parseExpression()
@@ -623,7 +876,7 @@ func (p *Parser) parseForEach() (Statement, error) {
 	}
 
 	if !p.match(lexer.COLON) {
-		return nil, p.error("expected ':' after for each")
+		return nil, p.errorf("expected ':' after for each")
 	}
 
 	p.skipNewlines()
@@ -636,20 +889,20 @@ func (p *Parser) parseForEach() (Statement, error) {
 }
 
 func (p *Parser) parseRepeat() (Statement, error) {
-	p.advance() // consume 'repeat'
+	p.advance()
 
 	if p.current().Type != lexer.INT {
-		return nil, p.error("expected integer after 'repeat'")
+		return nil, p.errorf("expected integer after 'repeat'")
 	}
 	count, _ := strconv.Atoi(p.current().Value)
 	p.advance()
 
 	if !p.match(lexer.TIMES) {
-		return nil, p.error("expected 'times' after count")
+		return nil, p.errorf("expected 'times' after count")
 	}
 
 	if !p.match(lexer.COLON) {
-		return nil, p.error("expected ':' after 'times'")
+		return nil, p.errorf("expected ':' after 'times'")
 	}
 
 	p.skipNewlines()
@@ -662,7 +915,7 @@ func (p *Parser) parseRepeat() (Statement, error) {
 }
 
 func (p *Parser) parseWhile() (Statement, error) {
-	p.advance() // consume 'while'
+	p.advance()
 
 	cond, err := p.parseExpression()
 	if err != nil {
@@ -670,7 +923,7 @@ func (p *Parser) parseWhile() (Statement, error) {
 	}
 
 	if !p.match(lexer.COLON) {
-		return nil, p.error("expected ':' after while condition")
+		return nil, p.errorf("expected ':' after while condition")
 	}
 
 	p.skipNewlines()
@@ -683,19 +936,18 @@ func (p *Parser) parseWhile() (Statement, error) {
 }
 
 func (p *Parser) parseReturn() (Statement, error) {
-	p.advance() // consume 'return'
+	p.advance()
 
-	if p.check(lexer.NEWLINE) || p.check(lexer.DEDENT) || p.isAtEnd() {
+	if p.check(lexer.NEWLINE) || p.check(lexer.DEDENT) || p.atEnd() {
 		return Return{}, nil
 	}
 
-	// Parse first value using parseComparison to avoid consuming 'and'
 	val, err := p.parseComparison()
 	if err != nil {
 		return nil, err
 	}
 
-	// Check for multiple returns: return a and b and c
+	// Multiple returns: return a and b and c
 	if p.check(lexer.AND) {
 		elements := []Expression{val}
 		for p.match(lexer.AND) {
@@ -712,18 +964,16 @@ func (p *Parser) parseReturn() (Statement, error) {
 }
 
 func (p *Parser) parseSay() (Statement, error) {
-	p.advance() // consume 'say'
-
+	p.advance()
 	val, err := p.parseExpression()
 	if err != nil {
 		return nil, err
 	}
-
 	return Say{Value: val}, nil
 }
 
 func (p *Parser) parseWriteFile(appendMode bool) (Statement, error) {
-	p.advance() // consume 'write' or 'append'
+	p.advance()
 
 	content, err := p.parseExpression()
 	if err != nil {
@@ -731,7 +981,7 @@ func (p *Parser) parseWriteFile(appendMode bool) (Statement, error) {
 	}
 
 	if !p.match(lexer.TO) {
-		return nil, p.error("expected 'to' after content in write/append")
+		return nil, p.errorf("expected 'to' after content")
 	}
 
 	path, err := p.parseExpression()
@@ -743,15 +993,15 @@ func (p *Parser) parseWriteFile(appendMode bool) (Statement, error) {
 }
 
 func (p *Parser) parseUsing() (Statement, error) {
-	p.advance() // consume 'using'
+	p.advance()
 
 	name := p.current().Value
 	if !p.match(lexer.IDENT) {
-		return nil, p.error("expected variable name after 'using'")
+		return nil, p.errorf("expected variable name after 'using'")
 	}
 
 	if !p.match(lexer.IS) {
-		return nil, p.error("expected 'is' after variable name in using")
+		return nil, p.errorf("expected 'is' after variable name")
 	}
 
 	expr, err := p.parseExpression()
@@ -760,7 +1010,7 @@ func (p *Parser) parseUsing() (Statement, error) {
 	}
 
 	if !p.match(lexer.COLON) {
-		return nil, p.error("expected ':' after using expression")
+		return nil, p.errorf("expected ':' after using expression")
 	}
 
 	p.skipNewlines()
@@ -773,80 +1023,157 @@ func (p *Parser) parseUsing() (Statement, error) {
 }
 
 func (p *Parser) parseYield() (Statement, error) {
-	p.advance() // consume 'yield'
-
+	p.advance()
 	val, err := p.parseExpression()
 	if err != nil {
 		return nil, err
 	}
-
 	return Yield{Value: val}, nil
+}
+
+// v1.0 statement parsers
+
+func (p *Parser) parseLog() (Statement, error) {
+	p.advance()
+
+	level := "info"
+	switch {
+	case p.match(lexer.INFO):
+		level = "info"
+	case p.match(lexer.WARN):
+		level = "warn"
+	case p.match(lexer.ERROR):
+		level = "error"
+	}
+
+	msg, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	return Log{Level: level, Message: msg}, nil
+}
+
+func (p *Parser) parseAssert() (Statement, error) {
+	p.advance()
+
+	cond, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	var msg Expression
+	if p.match(lexer.COMMA) {
+		msg, err = p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return Assert{Condition: cond, Message: msg}, nil
+}
+
+func (p *Parser) parseTry() (Statement, error) {
+	p.advance()
+
+	if !p.match(lexer.COLON) {
+		return nil, p.errorf("expected ':' after 'try'")
+	}
+
+	p.skipNewlines()
+	body, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	if !p.match(lexer.CATCH) {
+		return nil, p.errorf("expected 'catch' after try block")
+	}
+
+	errName := "err"
+	if p.current().Type == lexer.IDENT {
+		errName = p.current().Value
+		p.advance()
+	}
+
+	if !p.match(lexer.COLON) {
+		return nil, p.errorf("expected ':' after 'catch'")
+	}
+
+	p.skipNewlines()
+	catchBody, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return Try{Body: body, Catch: catchBody, ErrName: errName}, nil
+}
+
+func (p *Parser) parseThrow() (Statement, error) {
+	p.advance()
+	msg, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	return Throw{Message: msg}, nil
+}
+
+func (p *Parser) parseDoTogether() (Statement, error) {
+	p.advance()
+
+	if !p.match(lexer.TOGETHER) {
+		return nil, p.errorf("expected 'together' after 'do'")
+	}
+
+	if !p.match(lexer.COLON) {
+		return nil, p.errorf("expected ':' after 'do together'")
+	}
+
+	p.skipNewlines()
+	body, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return DoTogether{Body: body}, nil
+}
+
+func (p *Parser) parseSend() (Statement, error) {
+	p.advance()
+
+	msg, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	if !p.match(lexer.TO) {
+		return nil, p.errorf("expected 'to' after message")
+	}
+
+	socket, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	return WebSocketSend{Message: msg, Socket: socket}, nil
 }
 
 func (p *Parser) parseIdentStatement() (Statement, error) {
 	name := p.current().Value
 	p.advance()
 
-	// Check for unpacking: a, b is value
+	// Unpacking: a, b is value
 	if p.match(lexer.COMMA) {
-		names := []string{name}
-		for {
-			if p.current().Type != lexer.IDENT {
-				return nil, p.error("expected identifier in unpacking")
-			}
-			names = append(names, p.current().Value)
-			p.advance()
-			if !p.match(lexer.COMMA) {
-				break
-			}
-		}
-
-		if !p.match(lexer.IS) {
-			return nil, p.error("expected 'is' after unpacking names")
-		}
-
-		val, err := p.parseExpression()
-		if err != nil {
-			return nil, err
-		}
-
-		mutable := false
-		if p.match(lexer.COMMA) {
-			if !p.match(lexer.CAN) {
-				return nil, p.error("expected 'can' after ','")
-			}
-			if !p.match(lexer.CHANGE) {
-				return nil, p.error("expected 'change' after 'can'")
-			}
-			mutable = true
-		}
-
-		return UnpackAssign{Names: names, Value: val, Mutable: mutable}, nil
+		return p.parseUnpacking(name)
 	}
 
+	// Assignment: name is value
 	if p.match(lexer.IS) {
-		// Assignment
-		val, err := p.parseExpression()
-		if err != nil {
-			return nil, err
-		}
-
-		mutable := false
-		if p.match(lexer.COMMA) {
-			if !p.match(lexer.CAN) {
-				return nil, p.error("expected 'can' after ','")
-			}
-			if !p.match(lexer.CHANGE) {
-				return nil, p.error("expected 'change' after 'can'")
-			}
-			mutable = true
-		}
-
-		return Assignment{Name: name, Value: val, Mutable: mutable}, nil
+		return p.parseAssignment(name)
 	}
 
+	// Reassignment: name becomes value
 	if p.match(lexer.BECOMES) {
-		// Reassignment
 		val, err := p.parseExpression()
 		if err != nil {
 			return nil, err
@@ -854,8 +1181,7 @@ func (p *Parser) parseIdentStatement() (Statement, error) {
 		return Reassign{Name: name, Value: val}, nil
 	}
 
-	// Function call or expression statement
-	// Put back the identifier and parse as expression
+	// Expression statement
 	p.pos--
 	expr, err := p.parseExpression()
 	if err != nil {
@@ -864,7 +1190,52 @@ func (p *Parser) parseIdentStatement() (Statement, error) {
 	return ExprStmt{Expr: expr}, nil
 }
 
-// Expression parsing with precedence
+func (p *Parser) parseUnpacking(firstName string) (Statement, error) {
+	names := []string{firstName}
+	for {
+		if p.current().Type != lexer.IDENT {
+			return nil, p.errorf("expected identifier in unpacking")
+		}
+		names = append(names, p.current().Value)
+		p.advance()
+		if !p.match(lexer.COMMA) {
+			break
+		}
+	}
+
+	if !p.match(lexer.IS) {
+		return nil, p.errorf("expected 'is' after unpacking names")
+	}
+
+	val, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	mutable := p.parseMutableMarker()
+	return UnpackAssign{Names: names, Value: val, Mutable: mutable}, nil
+}
+
+func (p *Parser) parseAssignment(name string) (Statement, error) {
+	val, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	mutable := p.parseMutableMarker()
+	return Assignment{Name: name, Value: val, Mutable: mutable}, nil
+}
+
+func (p *Parser) parseMutableMarker() bool {
+	if p.match(lexer.COMMA) {
+		if p.match(lexer.CAN) && p.match(lexer.CHANGE) {
+			return true
+		}
+	}
+	return false
+}
+
+// -------------------- Expression Parsing --------------------
 
 func (p *Parser) parseExpression() (Expression, error) {
 	return p.parsePipe()
@@ -877,7 +1248,6 @@ func (p *Parser) parsePipe() (Expression, error) {
 	}
 
 	for p.match(lexer.PIPE) {
-		// The right side should be a function name (identifier)
 		right, err := p.parseOr()
 		if err != nil {
 			return nil, err
@@ -1042,7 +1412,7 @@ func (p *Parser) parsePostfix() (Expression, error) {
 		if p.match(lexer.POSSESSIVE) {
 			field := p.current().Value
 			if !p.match(lexer.IDENT) {
-				return nil, p.error("expected field name after 's")
+				return nil, p.errorf("expected field name after 's")
 			}
 			expr = Access{Object: expr, Field: field}
 		} else if p.match(lexer.AT) {
@@ -1052,8 +1422,6 @@ func (p *Parser) parsePostfix() (Expression, error) {
 			}
 			expr = Index{Object: expr, Index: idx}
 		} else if p.match(lexer.FROM) {
-			// Slice: items from start to end, items from start
-			// Use parsePrimary for start to avoid it consuming 'to'
 			start, err := p.parsePrimary()
 			if err != nil {
 				return nil, err
@@ -1067,8 +1435,6 @@ func (p *Parser) parsePostfix() (Expression, error) {
 			}
 			expr = Slice{Object: expr, Start: start, End: end}
 		} else if p.match(lexer.TO) {
-			// Slice: items to end (from beginning)
-			// Only applies if expr is an identifier (not a literal)
 			if _, isIdent := expr.(Ident); isIdent {
 				end, err := p.parsePrimary()
 				if err != nil {
@@ -1076,7 +1442,6 @@ func (p *Parser) parsePostfix() (Expression, error) {
 				}
 				expr = Slice{Object: expr, Start: nil, End: end}
 			} else {
-				// Put back the TO and break - it's not a slice
 				p.pos--
 				break
 			}
@@ -1090,6 +1455,7 @@ func (p *Parser) parsePostfix() (Expression, error) {
 
 func (p *Parser) parsePrimary() (Expression, error) {
 	switch p.current().Type {
+	// Literals
 	case lexer.INT:
 		val, _ := strconv.Atoi(p.current().Value)
 		p.advance()
@@ -1113,16 +1479,18 @@ func (p *Parser) parsePrimary() (Expression, error) {
 		p.advance()
 		return BoolLit{Value: false}, nil
 
+	// Self access
 	case lexer.MY:
 		p.advance()
 		field := p.current().Value
 		if !p.match(lexer.IDENT) {
-			return nil, p.error("expected field name after 'my'")
+			return nil, p.errorf("expected field name after 'my'")
 		}
 		return MyAccess{Field: field}, nil
 
+	// I/O expressions
 	case lexer.READ:
-		p.advance() // consume 'read'
+		p.advance()
 		path, err := p.parseArgument()
 		if err != nil {
 			return nil, err
@@ -1130,7 +1498,7 @@ func (p *Parser) parsePrimary() (Expression, error) {
 		return ReadFile{Path: path}, nil
 
 	case lexer.ENV:
-		p.advance() // consume 'env'
+		p.advance()
 		name, err := p.parseArgument()
 		if err != nil {
 			return nil, err
@@ -1138,7 +1506,7 @@ func (p *Parser) parsePrimary() (Expression, error) {
 		return EnvVar{Name: name}, nil
 
 	case lexer.RUN:
-		p.advance() // consume 'run'
+		p.advance()
 		cmd, err := p.parseArgument()
 		if err != nil {
 			return nil, err
@@ -1146,35 +1514,71 @@ func (p *Parser) parsePrimary() (Expression, error) {
 		return RunCommand{Command: cmd}, nil
 
 	case lexer.OPEN:
-		p.advance() // consume 'open'
+		p.advance()
 		path, err := p.parseArgument()
 		if err != nil {
 			return nil, err
 		}
 		return OpenFile{Path: path, Mode: "read"}, nil
 
-	case lexer.IDENT, lexer.A:
-		name := p.current().Value
+	// v1.0 expressions
+	case lexer.FETCH:
 		p.advance()
-
-		// Check for function call with arguments
-		var args []Expression
-		for p.isArgStart() {
-			arg, err := p.parseArgument()
-			if err != nil {
-				return nil, err
-			}
-			args = append(args, arg)
-			// Skip "and" between arguments
-			p.match(lexer.AND)
+		url, err := p.parseArgument()
+		if err != nil {
+			return nil, err
 		}
+		return Fetch{URL: url, Method: "GET"}, nil
 
-		if len(args) > 0 {
-			return Call{Func: Ident{Name: name}, Args: args}, nil
+	case lexer.PARSE:
+		p.advance()
+		val, err := p.parseArgument()
+		if err != nil {
+			return nil, err
 		}
+		return ParseJSON{Value: val}, nil
 
-		return Ident{Name: name}, nil
+	case lexer.STRINGIFY:
+		p.advance()
+		val, err := p.parseArgument()
+		if err != nil {
+			return nil, err
+		}
+		return StringifyJSON{Value: val}, nil
 
+	case lexer.MATCH:
+		return p.parseRegexMatch()
+
+	case lexer.FIND:
+		return p.parseRegexFindAll()
+
+	case lexer.REPLACE:
+		return p.parseRegexReplace()
+
+	case lexer.HASH:
+		return p.parseHash()
+
+	case lexer.WAIT:
+		p.advance()
+		expr, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		return Wait{Expr: expr}, nil
+
+	case lexer.CONNECT:
+		p.advance()
+		url, err := p.parseArgument()
+		if err != nil {
+			return nil, err
+		}
+		return WebSocketConnect{URL: url}, nil
+
+	// Identifiers and function calls
+	case lexer.IDENT, lexer.A:
+		return p.parseIdentOrCall()
+
+	// Grouping
 	case lexer.LPAREN:
 		p.advance()
 		expr, err := p.parseExpression()
@@ -1182,79 +1586,128 @@ func (p *Parser) parsePrimary() (Expression, error) {
 			return nil, err
 		}
 		if !p.match(lexer.RPAREN) {
-			return nil, p.error("expected ')'")
+			return nil, p.errorf("expected ')'")
 		}
 		return expr, nil
 
+	// List
 	case lexer.LBRACKET:
 		return p.parseList()
 
 	default:
-		return nil, p.error(fmt.Sprintf("unexpected token in expression: %v", p.current()))
+		return nil, p.errorf("unexpected token: %v", p.current())
 	}
 }
 
-func (p *Parser) parseList() (Expression, error) {
-	p.advance() // consume '['
+func (p *Parser) parseRegexMatch() (Expression, error) {
+	p.advance()
+	pattern, err := p.parseArgument()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(lexer.IN) {
+		return nil, p.errorf("expected 'in' after pattern")
+	}
+	text, err := p.parseArgument()
+	if err != nil {
+		return nil, err
+	}
+	return RegexMatch{Pattern: pattern, Text: text}, nil
+}
 
-	// Empty list
+func (p *Parser) parseRegexFindAll() (Expression, error) {
+	p.advance()
+	pattern, err := p.parseArgument()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(lexer.IN) {
+		return nil, p.errorf("expected 'in' after pattern")
+	}
+	text, err := p.parseArgument()
+	if err != nil {
+		return nil, err
+	}
+	return RegexFindAll{Pattern: pattern, Text: text}, nil
+}
+
+func (p *Parser) parseRegexReplace() (Expression, error) {
+	p.advance()
+	pattern, err := p.parseArgument()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(lexer.IN) {
+		return nil, p.errorf("expected 'in' after pattern")
+	}
+	text, err := p.parseArgument()
+	if err != nil {
+		return nil, err
+	}
+	if p.current().Type != lexer.IDENT || p.current().Value != "with" {
+		return nil, p.errorf("expected 'with' in replace")
+	}
+	p.advance()
+	replacement, err := p.parseArgument()
+	if err != nil {
+		return nil, err
+	}
+	return RegexReplace{Pattern: pattern, Text: text, Replacement: replacement}, nil
+}
+
+func (p *Parser) parseHash() (Expression, error) {
+	p.advance()
+	algo := "sha256"
+	if p.current().Type == lexer.IDENT {
+		name := p.current().Value
+		if name == "sha256" || name == "md5" || name == "sha1" {
+			algo = name
+			p.advance()
+		}
+	}
+	val, err := p.parseArgument()
+	if err != nil {
+		return nil, err
+	}
+	return Hash{Algorithm: algo, Value: val}, nil
+}
+
+func (p *Parser) parseIdentOrCall() (Expression, error) {
+	name := p.current().Value
+	p.advance()
+
+	var args []Expression
+	for p.isArgStart() {
+		arg, err := p.parseArgument()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+		p.match(lexer.AND)
+	}
+
+	if len(args) > 0 {
+		return Call{Func: Ident{Name: name}, Args: args}, nil
+	}
+
+	return Ident{Name: name}, nil
+}
+
+func (p *Parser) parseList() (Expression, error) {
+	p.advance()
+
 	if p.match(lexer.RBRACKET) {
 		return List{Elements: []Expression{}}, nil
 	}
 
-	// Parse first expression
-	first, err := p.parseOr() // Use parseOr to avoid consuming 'for' keyword
+	first, err := p.parseOr()
 	if err != nil {
 		return nil, err
 	}
 
-	// Check for list comprehension: [expr for each var in ...]
+	// List comprehension
 	if p.match(lexer.FOR) {
-		if !p.match(lexer.EACH) {
-			return nil, p.error("expected 'each' after 'for' in list comprehension")
-		}
-
-		varName := p.current().Value
-		if !p.match(lexer.IDENT) {
-			return nil, p.error("expected variable name in list comprehension")
-		}
-
-		if !p.match(lexer.IN) {
-			return nil, p.error("expected 'in' after variable in list comprehension")
-		}
-
-		start, err := p.parseOr()
-		if err != nil {
-			return nil, err
-		}
-
-		var end Expression
-		if p.match(lexer.TO) {
-			end, err = p.parseOr()
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		var condition Expression
-		if p.match(lexer.WHERE) {
-			condition, err = p.parseOr()
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if !p.match(lexer.RBRACKET) {
-			return nil, p.error("expected ']' at end of list comprehension")
-		}
-
-		return ListComprehension{
-			Expr:      first,
-			Var:       varName,
-			Start:     start,
-			End:       end,
-			Condition: condition,
-		}, nil
+		return p.parseListComprehension(first)
 	}
 
 	// Regular list
@@ -1268,34 +1721,61 @@ func (p *Parser) parseList() (Expression, error) {
 	}
 
 	if !p.match(lexer.RBRACKET) {
-		return nil, p.error("expected ']'")
+		return nil, p.errorf("expected ']'")
 	}
 
 	return List{Elements: elements}, nil
 }
 
-func (p *Parser) isExprStart() bool {
-	switch p.current().Type {
-	case lexer.INT, lexer.FLOAT, lexer.STRING, lexer.YES, lexer.NO,
-		lexer.IDENT, lexer.LPAREN, lexer.LBRACKET, lexer.MY, lexer.A:
-		return true
-	default:
-		return false
+func (p *Parser) parseListComprehension(expr Expression) (Expression, error) {
+	if !p.match(lexer.EACH) {
+		return nil, p.errorf("expected 'each' after 'for'")
 	}
-}
 
-func (p *Parser) isArgStart() bool {
-	switch p.current().Type {
-	case lexer.INT, lexer.FLOAT, lexer.STRING, lexer.YES, lexer.NO,
-		lexer.LPAREN, lexer.LBRACKET, lexer.IDENT, lexer.A:
-		return true
-	default:
-		return false
+	varName := p.current().Value
+	if !p.match(lexer.IDENT) {
+		return nil, p.errorf("expected variable name")
 	}
+
+	if !p.match(lexer.IN) {
+		return nil, p.errorf("expected 'in' after variable")
+	}
+
+	start, err := p.parseOr()
+	if err != nil {
+		return nil, err
+	}
+
+	var end Expression
+	if p.match(lexer.TO) {
+		end, err = p.parseOr()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var condition Expression
+	if p.match(lexer.WHERE) {
+		condition, err = p.parseOr()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if !p.match(lexer.RBRACKET) {
+		return nil, p.errorf("expected ']'")
+	}
+
+	return ListComprehension{
+		Expr:      expr,
+		Var:       varName,
+		Start:     start,
+		End:       end,
+		Condition: condition,
+	}, nil
 }
 
 func (p *Parser) parseArgument() (Expression, error) {
-	// Parse a single argument (not a full expression to avoid consuming operators)
 	switch p.current().Type {
 	case lexer.INT:
 		val, _ := strconv.Atoi(p.current().Value)
@@ -1326,17 +1806,26 @@ func (p *Parser) parseArgument() (Expression, error) {
 			return nil, err
 		}
 		if !p.match(lexer.RPAREN) {
-			return nil, p.error("expected ')'")
+			return nil, p.errorf("expected ')'")
 		}
 		return expr, nil
 	case lexer.LBRACKET:
 		return p.parseList()
 	default:
-		return nil, p.error("expected argument")
+		return nil, p.errorf("expected argument")
 	}
 }
 
-// Helper methods
+func (p *Parser) isArgStart() bool {
+	switch p.current().Type {
+	case lexer.INT, lexer.FLOAT, lexer.STRING, lexer.YES, lexer.NO,
+		lexer.LPAREN, lexer.LBRACKET, lexer.IDENT, lexer.A:
+		return true
+	}
+	return false
+}
+
+// -------------------- Helper Methods --------------------
 
 func (p *Parser) current() lexer.Token {
 	if p.pos >= len(p.tokens) {
@@ -1363,7 +1852,7 @@ func (p *Parser) match(t lexer.TokenType) bool {
 	return false
 }
 
-func (p *Parser) isAtEnd() bool {
+func (p *Parser) atEnd() bool {
 	return p.current().Type == lexer.EOF
 }
 
@@ -1372,7 +1861,8 @@ func (p *Parser) skipNewlines() {
 	}
 }
 
-func (p *Parser) error(msg string) error {
+func (p *Parser) errorf(format string, args ...interface{}) error {
 	tok := p.current()
+	msg := fmt.Sprintf(format, args...)
 	return fmt.Errorf("%d:%d: %s (got %v)", tok.Line, tok.Column, msg, tok)
 }

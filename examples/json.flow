@@ -1,0 +1,16 @@
+// json.flow - JSON parsing demo
+
+to start:
+    // The parse function extracts key-value pairs from JSON-like text
+    // For now, demonstrating stringify
+
+    // Stringify a value
+    number is 42
+    json_num is stringify number
+    say "Number stringified:"
+    say json_num
+
+    text is "hello"
+    json_text is stringify text
+    say "Text stringified:"
+    say json_text

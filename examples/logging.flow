@@ -1,0 +1,16 @@
+// logging.flow - Structured logging with levels
+
+to start:
+    say "Starting application..."
+
+    log info "Application started successfully"
+    log info "Processing data..."
+
+    count is 42
+    log info "Processed {count} items"
+
+    log warn "Memory usage is high"
+
+    log error "Connection timeout occurred"
+
+    log info "Application shutting down"

@@ -1,0 +1,19 @@
+// regex.flow - Regular expressions
+
+to start:
+    text is "Hello 123 World 456 Test 789"
+
+    // Check if pattern matches
+    if match "[0-9]+" in text:
+        say "Found numbers in text!"
+
+    // Find all matches
+    numbers is find "[0-9]+" in text
+    say "All numbers found:"
+    for each n in numbers:
+        say n
+
+    // Replace pattern
+    cleaned is replace "[0-9]+" in text with "NUM"
+    say "After replacement:"
+    say cleaned

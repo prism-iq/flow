@@ -1,0 +1,25 @@
+// hashing.flow - Cryptographic hashing
+
+to start:
+    message is "Hello, World!"
+
+    // SHA256 hash (default)
+    sha256_hash is hash sha256 message
+    say "SHA256:"
+    say sha256_hash
+
+    // MD5 hash
+    md5_hash is hash md5 message
+    say "MD5:"
+    say md5_hash
+
+    // SHA1 hash
+    sha1_hash is hash sha1 message
+    say "SHA1:"
+    say sha1_hash
+
+    // Verify file integrity
+    content is read "/etc/hostname"
+    file_hash is hash sha256 content
+    say "File hash:"
+    say file_hash

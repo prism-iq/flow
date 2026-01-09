@@ -1,0 +1,9 @@
+// http.flow - HTTP client example
+
+to start:
+    say "Fetching data from httpbin.org..."
+
+    // Simple GET request
+    response is fetch "http://httpbin.org/get"
+    say "Response received:"
+    say response

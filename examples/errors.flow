@@ -1,0 +1,26 @@
+// errors.flow - Error handling with try/catch
+
+to risky_operation value:
+    if value < 0:
+        throw "Value cannot be negative"
+    return value * 2
+
+to start:
+    say "Testing error handling..."
+
+    // Successful operation
+    try:
+        result is risky_operation 5
+        say "Result: 10"
+    catch e:
+        say "Error occurred"
+
+    // Operation that throws - use (0 - 1) for negative
+    try:
+        negative is (0 - 1)
+        result is risky_operation negative
+        say "This won't print"
+    catch e:
+        say "Caught error - handling gracefully"
+
+    say "Program continues after error handling"

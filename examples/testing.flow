@@ -1,0 +1,22 @@
+// testing.flow - Test framework
+
+to add a and b:
+    return a + b
+
+to multiply a and b:
+    return a * b
+
+test "addition works":
+    result is add 2 and 3
+    assert result == 5, "2 + 3 should equal 5"
+    assert add 0 and 0 == 0, "0 + 0 should equal 0"
+
+test "multiplication works":
+    result is multiply 3 and 4
+    assert result == 12, "3 * 4 should equal 12"
+    assert multiply 0 and 100 == 0, "0 * anything should be 0"
+
+to start:
+    say "Running tests..."
+    // Tests are compiled as separate functions
+    say "All tests defined - run with test runner"

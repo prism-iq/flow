@@ -50,6 +50,25 @@ func (g *Generator) Generate(prog *parser.Program) (string, error) {
 	g.writeln("#include <memory>")
 	g.writeln("#include <algorithm>")
 	g.writeln("#include <functional>")
+	g.writeln("#include <regex>")
+	g.writeln("#include <thread>")
+	g.writeln("#include <future>")
+	g.writeln("#include <mutex>")
+	g.writeln("#include <chrono>")
+	g.writeln("#include <iomanip>")
+	g.writeln("#include <stdexcept>")
+	g.writeln("#include <ctime>")
+	// For networking - use POSIX sockets (available on Linux)
+	g.writeln("#include <sys/socket.h>")
+	g.writeln("#include <netinet/in.h>")
+	g.writeln("#include <arpa/inet.h>")
+	g.writeln("#include <netdb.h>")
+	g.writeln("#include <unistd.h>")
+	// OpenSSL for HTTPS and hashing
+	g.writeln("#include <openssl/sha.h>")
+	g.writeln("#include <openssl/md5.h>")
+	g.writeln("#include <openssl/ssl.h>")
+	g.writeln("#include <openssl/err.h>")
 	g.writeln("")
 
 	// Generate structs with methods
@@ -59,13 +78,15 @@ func (g *Generator) Generate(prog *parser.Program) (string, error) {
 		}
 	}
 
-	// Generate standalone functions and decorated functions
+	// Generate standalone functions, decorated functions, and tests
 	for _, stmt := range prog.Statements {
 		switch s := stmt.(type) {
 		case parser.Function:
 			g.genFunction(s)
 		case parser.Decorator:
 			g.genDecorator(s)
+		case parser.Test:
+			g.genTest(s)
 		}
 	}
 
@@ -238,6 +259,18 @@ func (g *Generator) genStatement(stmt parser.Statement) {
 		g.genUsing(s)
 	case parser.Yield:
 		g.writeln("_yield(%s);", g.genExpr(s.Value))
+	case parser.Log:
+		g.genLog(s)
+	case parser.Assert:
+		g.genAssert(s)
+	case parser.Try:
+		g.genTry(s)
+	case parser.Throw:
+		g.writeln("throw std::runtime_error(%s);", g.genExpr(s.Message))
+	case parser.DoTogether:
+		g.genDoTogether(s)
+	case parser.WebSocketSend:
+		g.genWebSocketSend(s)
 	case parser.ExprStmt:
 		g.writeln("%s;", g.genExpr(s.Expr))
 	}
@@ -420,6 +453,24 @@ func (g *Generator) genExpr(expr parser.Expression) string {
 		return g.genOpenFile(e)
 	case parser.Slice:
 		return g.genSlice(e)
+	case parser.Fetch:
+		return g.genFetch(e)
+	case parser.ParseJSON:
+		return g.genParseJSON(e)
+	case parser.StringifyJSON:
+		return g.genStringifyJSON(e)
+	case parser.RegexMatch:
+		return g.genRegexMatch(e)
+	case parser.RegexFindAll:
+		return g.genRegexFindAll(e)
+	case parser.RegexReplace:
+		return g.genRegexReplace(e)
+	case parser.Hash:
+		return g.genHash(e)
+	case parser.Wait:
+		return g.genWait(e)
+	case parser.WebSocketConnect:
+		return g.genWebSocketConnect(e)
 	default:
 		return "/* unknown expr */"
 	}
@@ -551,4 +602,263 @@ func (g *Generator) writeln(format string, args ...interface{}) {
 	g.output.WriteString(indent)
 	fmt.Fprintf(&g.output, format, args...)
 	g.output.WriteString("\n")
+}
+
+// ============= v1.0 Code Generation =============
+
+// HTTP Fetch - simple HTTP GET using sockets
+func (g *Generator) genFetch(f parser.Fetch) string {
+	url := g.genExpr(f.URL)
+	return fmt.Sprintf(`[&]() -> std::string {
+    std::string url = %s;
+    // Parse URL
+    std::string host, path = "/";
+    size_t pos = url.find("://");
+    if (pos != std::string::npos) url = url.substr(pos + 3);
+    pos = url.find("/");
+    if (pos != std::string::npos) { host = url.substr(0, pos); path = url.substr(pos); }
+    else { host = url; }
+    // Resolve host
+    struct hostent* server = gethostbyname(host.c_str());
+    if (!server) return "";
+    // Create socket
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) return "";
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(80);
+    memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+    if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) { close(sockfd); return ""; }
+    // Send HTTP request
+    std::string request = "GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\n\r\n";
+    send(sockfd, request.c_str(), request.length(), 0);
+    // Read response
+    std::string response;
+    char buffer[4096];
+    ssize_t n;
+    while ((n = recv(sockfd, buffer, sizeof(buffer)-1, 0)) > 0) { buffer[n] = 0; response += buffer; }
+    close(sockfd);
+    // Extract body after headers
+    pos = response.find("\r\n\r\n");
+    if (pos != std::string::npos) return response.substr(pos + 4);
+    return response;
+}()`, url)
+}
+
+// JSON parsing - simple key-value extraction (basic implementation)
+func (g *Generator) genParseJSON(pj parser.ParseJSON) string {
+	val := g.genExpr(pj.Value)
+	// Return a simple map-like structure using vector of pairs
+	return fmt.Sprintf(`[&]() -> std::vector<std::pair<std::string, std::string>> {
+    std::vector<std::pair<std::string, std::string>> result;
+    std::string json = %s;
+    std::regex pattern(R"(\"([^\"]+)\"\s*:\s*(?:\"([^\"]*)\"|(\d+(?:\.\d+)?)|(\w+)))");
+    std::smatch match;
+    std::string::const_iterator searchStart(json.cbegin());
+    while (std::regex_search(searchStart, json.cend(), match, pattern)) {
+        std::string key = match[1];
+        std::string value = match[2].matched ? match[2] : (match[3].matched ? match[3] : match[4]);
+        result.push_back({key, value});
+        searchStart = match.suffix().first;
+    }
+    return result;
+}()`, val)
+}
+
+// JSON stringify - convert value to JSON string
+func (g *Generator) genStringifyJSON(sj parser.StringifyJSON) string {
+	val := g.genExpr(sj.Value)
+	return fmt.Sprintf(`[&]() -> std::string {
+    std::ostringstream oss;
+    oss << %s;
+    return oss.str();
+}()`, val)
+}
+
+// Regex match - returns true/false
+func (g *Generator) genRegexMatch(rm parser.RegexMatch) string {
+	pattern := g.genExpr(rm.Pattern)
+	text := g.genExpr(rm.Text)
+	return fmt.Sprintf("std::regex_search(%s, std::regex(%s))", text, pattern)
+}
+
+// Regex find all - returns vector of matches
+func (g *Generator) genRegexFindAll(rf parser.RegexFindAll) string {
+	pattern := g.genExpr(rf.Pattern)
+	text := g.genExpr(rf.Text)
+	return fmt.Sprintf(`[&]() -> std::vector<std::string> {
+    std::vector<std::string> results;
+    std::string s = %s;
+    std::regex r(%s);
+    std::sregex_iterator it(s.begin(), s.end(), r), end;
+    for (; it != end; ++it) results.push_back((*it)[0]);
+    return results;
+}()`, text, pattern)
+}
+
+// Regex replace - returns new string with replacements
+func (g *Generator) genRegexReplace(rr parser.RegexReplace) string {
+	pattern := g.genExpr(rr.Pattern)
+	text := g.genExpr(rr.Text)
+	replacement := g.genExpr(rr.Replacement)
+	return fmt.Sprintf("std::regex_replace(%s, std::regex(%s), %s)", text, pattern, replacement)
+}
+
+// Hash functions using OpenSSL
+func (g *Generator) genHash(h parser.Hash) string {
+	val := g.genExpr(h.Value)
+	switch h.Algorithm {
+	case "md5":
+		return fmt.Sprintf(`[&]() -> std::string {
+    std::string input = %s;
+    unsigned char digest[MD5_DIGEST_LENGTH];
+    MD5((unsigned char*)input.c_str(), input.length(), digest);
+    std::ostringstream oss;
+    for (int i = 0; i < MD5_DIGEST_LENGTH; i++) oss << std::hex << std::setfill('0') << std::setw(2) << (int)digest[i];
+    return oss.str();
+}()`, val)
+	case "sha1":
+		return fmt.Sprintf(`[&]() -> std::string {
+    std::string input = %s;
+    unsigned char digest[SHA_DIGEST_LENGTH];
+    SHA1((unsigned char*)input.c_str(), input.length(), digest);
+    std::ostringstream oss;
+    for (int i = 0; i < SHA_DIGEST_LENGTH; i++) oss << std::hex << std::setfill('0') << std::setw(2) << (int)digest[i];
+    return oss.str();
+}()`, val)
+	default: // sha256
+		return fmt.Sprintf(`[&]() -> std::string {
+    std::string input = %s;
+    unsigned char digest[SHA256_DIGEST_LENGTH];
+    SHA256((unsigned char*)input.c_str(), input.length(), digest);
+    std::ostringstream oss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) oss << std::hex << std::setfill('0') << std::setw(2) << (int)digest[i];
+    return oss.str();
+}()`, val)
+	}
+}
+
+// Wait - async await using std::future
+func (g *Generator) genWait(w parser.Wait) string {
+	expr := g.genExpr(w.Expr)
+	return fmt.Sprintf("std::async(std::launch::async, [&]() { return %s; }).get()", expr)
+}
+
+// WebSocket connect - returns socket file descriptor
+func (g *Generator) genWebSocketConnect(ws parser.WebSocketConnect) string {
+	url := g.genExpr(ws.URL)
+	return fmt.Sprintf(`[&]() -> int {
+    std::string url = %s;
+    std::string host;
+    int port = 80;
+    // Parse ws://host:port/path
+    size_t pos = url.find("://");
+    if (pos != std::string::npos) url = url.substr(pos + 3);
+    pos = url.find(":");
+    size_t pathPos = url.find("/");
+    if (pos != std::string::npos && pos < pathPos) {
+        host = url.substr(0, pos);
+        port = std::stoi(url.substr(pos + 1, pathPos - pos - 1));
+    } else {
+        host = url.substr(0, pathPos);
+    }
+    struct hostent* server = gethostbyname(host.c_str());
+    if (!server) return -1;
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) return -1;
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
+    memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+    if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) { close(sockfd); return -1; }
+    return sockfd;
+}()`, url)
+}
+
+// WebSocket send
+func (g *Generator) genWebSocketSend(ws parser.WebSocketSend) {
+	socket := g.genExpr(ws.Socket)
+	msg := g.genExpr(ws.Message)
+	g.writeln("{ std::string _msg = %s; send(%s, _msg.c_str(), _msg.length(), 0); }", msg, socket)
+}
+
+// Logging with levels and timestamps
+func (g *Generator) genLog(l parser.Log) {
+	msg := g.genExpr(l.Message)
+	levelPrefix := ""
+	switch l.Level {
+	case "info":
+		levelPrefix = "[INFO]"
+	case "warn":
+		levelPrefix = "[WARN]"
+	case "error":
+		levelPrefix = "[ERROR]"
+	}
+	g.writeln(`{ auto _now = std::chrono::system_clock::now(); auto _time = std::chrono::system_clock::to_time_t(_now); std::cerr << std::put_time(std::localtime(&_time), "%%Y-%%m-%%d %%H:%%M:%%S") << " %s " << %s << std::endl; }`, levelPrefix, msg)
+}
+
+// Assert with optional message
+func (g *Generator) genAssert(a parser.Assert) {
+	cond := g.genExpr(a.Condition)
+	if a.Message != nil {
+		msg := g.genExpr(a.Message)
+		g.writeln(`if (!(%s)) { std::cerr << "Assertion failed: " << %s << std::endl; std::abort(); }`, cond, msg)
+	} else {
+		g.writeln(`if (!(%s)) { std::cerr << "Assertion failed: %s" << std::endl; std::abort(); }`, cond, cond)
+	}
+}
+
+// Try/catch with exception handling
+func (g *Generator) genTry(t parser.Try) {
+	g.writeln("try {")
+	g.indent++
+	for _, stmt := range t.Body {
+		g.genStatement(stmt)
+	}
+	g.indent--
+	g.writeln("} catch (const std::exception& %s) {", t.ErrName)
+	g.indent++
+	for _, stmt := range t.Catch {
+		g.genStatement(stmt)
+	}
+	g.indent--
+	g.writeln("}")
+}
+
+// Do together - concurrent execution using threads
+func (g *Generator) genDoTogether(dt parser.DoTogether) {
+	g.writeln("{")
+	g.indent++
+	g.writeln("std::vector<std::thread> _threads;")
+	for i, stmt := range dt.Body {
+		g.writeln("_threads.emplace_back([&]() {")
+		g.indent++
+		g.genStatement(stmt)
+		g.indent--
+		g.writeln("});")
+		_ = i
+	}
+	g.writeln("for (auto& t : _threads) t.join();")
+	g.indent--
+	g.writeln("}")
+}
+
+// Test block generation
+func (g *Generator) genTest(t parser.Test) {
+	testName := t.Name
+	if testName == "" {
+		testName = "unnamed_test"
+	}
+	g.writeln("void test_%s() {", strings.ReplaceAll(testName, " ", "_"))
+	g.indent++
+	g.writeln(`std::cout << "Running test: %s" << std::endl;`, testName)
+	for _, stmt := range t.Body {
+		g.genStatement(stmt)
+	}
+	g.writeln(`std::cout << "Test passed: %s" << std::endl;`, testName)
+	g.indent--
+	g.writeln("}")
+	g.writeln("")
 }
