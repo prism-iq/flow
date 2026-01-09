@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from .config import settings
 from .routes import router
 from .routes_extraction import router as extraction_router
+from .routes_hypothesis import router as hypothesis_router
 from .utils.logger import logger
 
 try:
@@ -50,6 +51,7 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(extraction_router)
+app.include_router(hypothesis_router)
 
 
 def main():
