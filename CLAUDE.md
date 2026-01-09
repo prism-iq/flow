@@ -1,17 +1,13 @@
 # Claude Context - Flow Programming Language
 
-**Last Updated:** 2026-01-09
-**Version:** 0.2.0
-**Repository:** /opt/flow
+**Version:** 0.3.0
+**Repository:** https://github.com/prism-iq/flow
 
 ---
 
 ## What is Flow?
 
-Flow is a programming language that combines:
-- **Power of C++** - Compiles to native code
-- **Clarity of Python** - Clean, readable syntax
-- **Natural vocabulary** - English words, not jargon
+Flow reads like English, compiles to C++.
 
 ```
 hello.flow → [Claude API] → hello.cpp → [g++] → ./hello
@@ -21,98 +17,109 @@ hello.flow → [Claude API] → hello.cpp → [g++] → ./hello
 
 ---
 
-## Flow Vocabulary
+## Axioms
 
-| Flow | Traditional | C++ Translation |
-|------|-------------|-----------------|
-| `do` | fn/func/def | function |
-| `thing` | struct/class | struct |
-| `kind` | enum | enum class |
-| `when` | match/switch | switch or if-else chain |
-| `need` | import/use | #include |
-| `give` | return | return |
-| `say` | print | std::cout |
-| `each` | for | for loop |
-| `vary` | mut/var | non-const |
-| `me` | self/this | this-> |
-| `yes`/`no` | true/false | true/false |
-| `and`/`or`/`not` | &&/\|\|/! | &&/\|\|/! |
-| `nothing` | nil/null | std::nullopt |
-| `good`/`fail` | Ok/Err | success/error |
-| `start` | spawn/async | std::async |
-| `wait` | await | .get() |
-| `later` | defer | RAII/destructor |
-| `pipe` | channel | queue |
-| `skip`/`stop` | continue/break | continue/break |
-| `check` | guard | if (!cond) return |
+1. **Explicit > Implicit** - No hidden behavior
+2. **Errors are values** - No exceptions
+3. **Null doesn't exist** - Use `maybe`
+4. **Immutable by default** - `can change` for mutable
+5. **No hidden allocations** - Stack default
+6. **One way to do things** - No overloading
+7. **Composition > Inheritance** - Embed, don't extend
+8. **Zero cost abstractions** - Compiles to concrete types
+9. **Fail at compile time** - Strong typing
+10. **Readable > Clever** - Code reads like prose
 
 ---
 
-## Transpilation Rules
+## Flow Vocabulary → C++
+
+| Flow | C++ |
+|------|-----|
+| `name is "x"` | `const auto name = "x";` |
+| `x becomes 5` | `x = 5;` |
+| `x, can change` | mutable variable |
+| `to greet someone:` | `void greet(auto someone) {` |
+| `return x` | `return x;` |
+| `a Person has:` | `struct Person {` |
+| `a Person can greet:` | method definition |
+| `my name` | `this->name` |
+| `bob's name` | `bob.name` |
+| `if/otherwise` | `if/else` |
+| `for each x in list:` | `for (auto x : list) {` |
+| `repeat 5 times:` | `for (int i=0; i<5; i++) {` |
+| `while x < 10:` | `while (x < 10) {` |
+| `skip` | `continue;` |
+| `stop` | `break;` |
+| `and/or/not` | `&&/\|\|/!` |
+| `yes/no` | `true/false` |
+| `say "text"` | `std::cout << "text" << std::endl;` |
+| `{expr}` in string | string interpolation |
+| `numbers at 0` | `numbers[0]` |
+| `try x` | result/error handling |
+| `maybe x` | `std::optional` |
+| `wait fetch url` | async/await |
+| `do together:` | concurrent execution |
+| `on heap` | heap allocation |
+
+---
+
+## Transpilation Examples
+
+### Variables
+
+```flow
+name is "Flow"
+age is 25
+count is 0, can change
+count becomes count + 1
+```
+→
+```cpp
+const auto name = std::string("Flow");
+const auto age = 25;
+auto count = 0;
+count = count + 1;
+```
 
 ### Functions
 
 ```flow
-do greet(name):
-    say "Hello, #{name}"
-```
-→
-```cpp
-void greet(std::string name) {
-    std::cout << "Hello, " << name << std::endl;
-}
-```
+to greet someone:
+    say "Hello, {someone}!"
 
-```flow
-do add(a, b):
-    give a + b
+to add a and b:
+    return a + b
 ```
 →
 ```cpp
+void greet(const std::string& someone) {
+    std::cout << "Hello, " << someone << "!" << std::endl;
+}
+
 auto add(auto a, auto b) {
     return a + b;
 }
 ```
 
+### Structs
+
 ```flow
-do double(x) = x * 2
+a Person has:
+    name as text
+    age as number
+
+a Person can introduce:
+    say "I'm {my name}, {my age} years old"
 ```
 →
 ```cpp
-auto double_fn(auto x) { return x * 2; }
-```
+struct Person {
+    std::string name;
+    int age;
 
-### Variables
-
-```flow
-name = "Flow"
-vary count = 0
-count = count + 1
-```
-→
-```cpp
-const auto name = std::string("Flow");
-auto count = 0;
-count = count + 1;
-```
-
-### Things (Structs)
-
-```flow
-thing Point:
-    x: int
-    y: int
-
-    do show(me) = "(#{me.x}, #{me.y})"
-```
-→
-```cpp
-struct Point {
-    int x;
-    int y;
-
-    std::string show() const {
-        return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
+    void introduce() const {
+        std::cout << "I'm " << name << ", " << age << " years old" << std::endl;
     }
 };
 ```
@@ -120,24 +127,27 @@ struct Point {
 ### Loops
 
 ```flow
-each i in 1..10:
-    say i
-```
-→
-```cpp
-for (int i = 1; i < 10; i++) {
-    std::cout << i << std::endl;
-}
-```
-
-```flow
-each item in items:
+for each item in items:
     say item
+
+repeat 5 times:
+    say "hello"
+
+for each i in 1 to 10:
+    say i
 ```
 →
 ```cpp
 for (const auto& item : items) {
     std::cout << item << std::endl;
+}
+
+for (int i = 0; i < 5; i++) {
+    std::cout << "hello" << std::endl;
+}
+
+for (int i = 1; i <= 10; i++) {
+    std::cout << i << std::endl;
 }
 ```
 
@@ -145,63 +155,33 @@ for (const auto& item : items) {
 
 ```flow
 if age >= 18:
-    say "adult"
-else:
-    say "minor"
+    say "Adult"
+otherwise:
+    say "Minor"
 ```
 →
 ```cpp
 if (age >= 18) {
-    std::cout << "adult" << std::endl;
+    std::cout << "Adult" << std::endl;
 } else {
-    std::cout << "minor" << std::endl;
+    std::cout << "Minor" << std::endl;
 }
 ```
 
-### Pattern Matching
+---
+
+## Entry Point
 
 ```flow
-when value:
-    0 => say "zero"
-    1 => say "one"
-    _ => say "other"
+to start:
+    say "Hello, World!"
 ```
 →
 ```cpp
-switch (value) {
-    case 0: std::cout << "zero" << std::endl; break;
-    case 1: std::cout << "one" << std::endl; break;
-    default: std::cout << "other" << std::endl; break;
+int main() {
+    std::cout << "Hello, World!" << std::endl;
+    return 0;
 }
-```
-
-### String Interpolation
-
-```flow
-say "Hello, #{name}! You are #{age} years old."
-```
-→
-```cpp
-std::cout << "Hello, " << name << "! You are " << age << " years old." << std::endl;
-```
-
-### Booleans & Logic
-
-```flow
-if active and not banned:
-    allow()
-
-enabled = yes
-disabled = no
-```
-→
-```cpp
-if (active && !banned) {
-    allow();
-}
-
-auto enabled = true;
-auto disabled = false;
 ```
 
 ---
@@ -219,13 +199,9 @@ auto disabled = false;
 ├── docs/
 │   ├── SYNTAX.md             # Full language reference
 │   └── PRINCIPLES.md         # Design decisions
-├── examples/
-│   ├── hello.flow            # Hello world
-│   ├── fibonacci.flow        # Recursion
-│   ├── loop.flow             # Loops demo
-│   └── things.flow           # Structs demo
+├── examples/                 # .flow examples
 ├── CLAUDE.md                 # This file
-└── go.mod                    # Go module
+└── go.mod
 ```
 
 ---
@@ -240,116 +216,30 @@ flow show hello.flow     # Show generated C++
 
 ---
 
-## Environment Variables
+## TL;DR for Transpilation
 
-```bash
-ANTHROPIC_API_KEY=sk-ant-...    # Required
-FLOW_COMPILER=g++               # Default: g++
-FLOW_STD=c++17                  # Default: c++17
-FLOW_DEBUG=false                # Show debug output
-```
-
----
-
-## System Prompt for Transpilation
-
-When transpiling Flow to C++, Claude should:
-
-1. **Output ONLY valid C++ code** - no markdown, no explanations
-2. **Use modern C++17** features
-3. **Include necessary headers** - iostream, string, vector, etc.
-4. **Translate Flow vocabulary:**
-   - `do` → function
-   - `thing` → struct
-   - `say` → std::cout <<
-   - `each` → for loop
-   - `give` → return
-   - `vary` → mutable variable
-   - `yes`/`no` → true/false
-   - `and`/`or`/`not` → &&/||/!
-   - `#{expr}` → string concatenation
-5. **Handle indentation** - Flow uses Python-style blocks
-6. **Return 0 from main()**
-
----
-
-## Examples
-
-### hello.flow
-```flow
-do main:
-    say "Hello, World!"
-```
-
-### fibonacci.flow
-```flow
-do fib(0) = 0
-do fib(1) = 1
-do fib(n) = fib(n-1) + fib(n-2)
-
-do main:
-    each i in 0..10:
-        say fib(i)
-```
-
-### things.flow
-```flow
-thing Person:
-    name: str
-    age: int
-
-    do greet(me):
-        say "Hi, I'm #{me.name}"
-
-    do adult?(me) = me.age >= 18
-
-do main:
-    bob = Person("Bob", 30)
-    bob.greet()
-
-    if bob.adult?():
-        say "Bob is an adult"
-```
-
----
-
-## Feedback Loop
-
-When g++ fails, the error is sent back to Claude:
-
-```
-Compile Error: [error message]
-Original Flow: [source]
-Generated C++: [code]
-
-Fix the C++ to resolve this error.
-```
-
-Max 3 retries before giving up.
-
----
-
-## TL;DR for Claude
-
-Flow uses natural English words:
-- `do` = function
-- `thing` = struct
+Flow v0.3 uses natural English:
+- `name is "x"` = assignment
+- `x becomes y` = reassignment
+- `to do something:` = function
+- `a Thing has:` = struct
+- `a Thing can act:` = method
+- `my field` = self.field
+- `x's field` = x.field
+- `for each/repeat/while` = loops
+- `if/otherwise` = conditionals
+- `yes/no` = true/false
+- `and/or/not` = &&/||/!
 - `say` = print
-- `each` = for
-- `give` = return
-- `when` = switch/match
-- `yes`/`no` = true/false
-- `and`/`or`/`not` = &&/||/!
-- `vary` = mutable
-- `#{x}` = string interpolation
+- `{x}` = interpolation
 
-Transpile to clean C++17. No markdown. Just code.
+**Output ONLY valid C++17. No markdown. Just code.**
 
 ---
 
 ## GITHUB & SECURITY
 
-**Repo:** https://github.com/prism-iq/flow (LIVE)
+**Repo:** https://github.com/prism-iq/flow
 
 ### NEVER COMMIT:
 - API keys, tokens, secrets
@@ -359,7 +249,7 @@ Transpile to clean C++17. No markdown. Just code.
 
 ### Before Committing
 ```bash
-git diff --staged | grep -iE "(sk-ant|password|secret|token|ssh|BEGIN.*KEY)" && echo "⚠️ SECRET DETECTED" || echo "✓ Clean"
+git diff --staged | grep -iE "(sk-ant|password|secret|token|ssh|BEGIN.*KEY)" && echo "SECRET DETECTED" || echo "Clean"
 ```
 
 ### Auto-Commit Protocol
@@ -367,4 +257,3 @@ git diff --staged | grep -iE "(sk-ant|password|secret|token|ssh|BEGIN.*KEY)" && 
 cd /opt/flow && git add -A && git commit -m "[type]: description" && git push
 ```
 Types: feat, fix, docs, refactor, chore
-

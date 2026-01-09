@@ -1,28 +1,28 @@
 // math.flow - Functions that return values
 
-do add(a, b):
-    give a + b
+to add a and b:
+    return a + b
 
-do multiply(a, b):
-    give a * b
+to multiply a and b:
+    return a * b
 
-do square(x):
-    give x * x
+to square x:
+    return x * x
 
-do factorial(n):
+to factorial n:
     if n <= 1:
-        give 1
-    give n * factorial(n - 1)
+        return 1
+    return n * factorial (n - 1)
 
-do main:
+to start:
     say "2 + 3 ="
-    say add(2, 3)
+    say add 2 and 3
 
     say "4 * 5 ="
-    say multiply(4, 5)
+    say multiply 4 and 5
 
     say "7 squared ="
-    say square(7)
+    say square 7
 
     say "5! ="
-    say factorial(5)
+    say factorial 5

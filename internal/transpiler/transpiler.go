@@ -93,9 +93,7 @@ Fix the C++ code to resolve the compilation error. Output ONLY the corrected C++
 }
 
 func (t *Transpiler) buildSystemPrompt(syntaxDoc string) string {
-	return fmt.Sprintf(`You are the Flow-to-C++ transpiler.
-
-Flow uses natural English words instead of programming jargon. Compiles to C++17.
+	return fmt.Sprintf(`You are the Flow-to-C++ transpiler. Flow v0.3 reads like English.
 
 CRITICAL RULES:
 1. Output ONLY valid C++ code - no markdown, no explanations, no code fences
@@ -104,43 +102,59 @@ CRITICAL RULES:
 4. Always return 0 from main()
 5. Preserve the logic and intent exactly
 
-FLOW VOCABULARY → C++ TRANSLATION:
-- do main: → int main() { ... return 0; }
-- do name(args): → function definition
-- do name(x) = expr → inline function
-- thing Name: → struct Name { ... };
-- kind Name: → enum class Name { ... };
-- say "text" → std::cout << "text" << std::endl;
-- say x → std::cout << x << std::endl;
-- each i in 0..n: → for (int i = 0; i < n; i++) { ... }
-- each i in 0..=n: → for (int i = 0; i <= n; i++) { ... }
-- each item in list: → for (const auto& item : list) { ... }
-- give x → return x;
-- vary x = 5 → auto x = 5; (mutable)
-- x = 5 → const auto x = 5; (immutable, but use auto for simplicity)
-- yes → true
-- no → false
+FLOW v0.3 VOCABULARY → C++ TRANSLATION:
+
+ENTRY POINT:
+- to start: → int main() { ... return 0; }
+
+VARIABLES:
+- name is "x" → const auto name = std::string("x");
+- age is 25 → const auto age = 25;
+- x is 0, can change → auto x = 0;
+- x becomes 5 → x = 5;
+
+FUNCTIONS:
+- to greet someone: → void greet(const std::string& someone) {
+- to add a and b: → auto add(auto a, auto b) {
+- return x → return x;
+
+STRUCTS:
+- a Person has: → struct Person {
+    name as text →     std::string name;
+    age as number →    int age;
+- a Person can greet: → void greet() const {
+- my name → name (or this->name)
+- bob's name → bob.name
+
+CONDITIONS:
+- if x: → if (x) {
+- otherwise: → } else {
+- otherwise if x: → } else if (x) {
+
+LOOPS:
+- for each item in list: → for (const auto& item : list) {
+- for each i in 1 to 10: → for (int i = 1; i <= 10; i++) {
+- repeat 5 times: → for (int i = 0; i < 5; i++) {
+- while x < 10: → while (x < 10) {
+- skip → continue;
+- stop → break;
+
+LOGIC:
 - and → &&
 - or → ||
 - not → !
-- if/else if/else → same in C++
-- when x: cases → switch(x) { cases }
-- "#{expr}" → string interpolation with <<
-- me.field → this->field (in methods)
-- skip → continue
-- stop → break
+- yes → true
+- no → false
+- x is 0 → x == 0
 
-STRING INTERPOLATION:
-- say "Hello, #{name}" → std::cout << "Hello, " << name << std::endl;
-- "Value: #{x}" → ("Value: " + std::to_string(x)) or stream
+OUTPUT:
+- say "text" → std::cout << "text" << std::endl;
+- say x → std::cout << x << std::endl;
+- "Hello, {name}" → "Hello, " << name (string interpolation)
 
-TYPES:
-- int → int
-- float → double
-- str → std::string
-- bool → bool
-- [T] → std::vector<T>
-- {K: V} → std::map<K, V>
+COLLECTIONS:
+- numbers are [1, 2, 3] → std::vector<int> numbers = {1, 2, 3};
+- numbers at 0 → numbers[0]
 
 SYNTAX REFERENCE:
 %s
@@ -153,15 +167,23 @@ func (t *Transpiler) loadSyntaxDoc() string {
 	content, err := os.ReadFile(syntaxPath)
 	if err != nil {
 		// Fallback to minimal syntax reference
-		return `Flow uses natural English words:
-- do for functions (do main:, do add(a,b):)
-- thing for structs (thing Point: x: int, y: int)
-- say for print (say "hello")
-- each for loops (each i in 0..10:)
-- give for return (give x + y)
-- vary for mutable variables
+		return `Flow v0.3 uses natural English:
+- to start: for entry point
+- to greet someone: for functions
+- return x for return values
+- a Person has: for structs
+- a Person can greet: for methods
+- say "hello" for print
+- for each i in 1 to 10: for loops
+- repeat 5 times: for counted loops
+- while x < 10: for while loops
+- if/otherwise for conditionals
+- name is "x" for assignment
+- x becomes 5 for reassignment
+- x, can change for mutable
 - yes/no for booleans
-- and/or/not for logic`
+- and/or/not for logic
+- skip/stop for continue/break`
 	}
 	// Return just the transpilation rules section if file is too long
 	if len(content) > 4000 {
@@ -296,7 +318,7 @@ func (t *Transpiler) saveCache(source, cpp string) {
 	cache[key] = cacheEntry{
 		Cpp:       cpp,
 		Timestamp: time.Now(),
-		Version:   "0.1.0",
+		Version:   "0.3.0",
 	}
 
 	// Save cache

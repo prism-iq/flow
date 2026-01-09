@@ -1,681 +1,318 @@
-# Flow Language Syntax
+# Flow Language v0.3 - Human-First Syntax
 
-**Version:** 0.2.0
-**Philosophy:** English words, not computer jargon.
-
----
-
-## Core Principle
-
-```
-Code should read like you're explaining it to a human.
-Power of C++. Clarity of Python. Words that make sense.
-```
+Flow reads like English, compiles to C++.
 
 ---
 
-## Vocabulary
+## Axioms
 
-| Flow | Traditional | Meaning |
-|------|-------------|---------|
-| `do` | fn, func, def | "do this action" |
-| `thing` | struct, class | "a thing with properties" |
-| `kind` | enum | "a kind of X" |
-| `when` | match, switch | "when X, do Y" |
-| `need` | import, use | "I need this" |
-| `give` | return | "give back result" |
-| `start` | spawn, async | "start this task" |
-| `wait` | await | "wait for it" |
-| `pipe` | channel | "data flows through" |
-| `later` | defer | "do this later" |
-| `try`/`fail` | Result/Error | "try, might fail" |
-| `good` | Ok, Some | "good result" |
-| `nothing` | None, nil, null | "nothing here" |
-| `can` | interface, trait | "can do X" |
-| `each` | for | "for each item" |
-| `vary` | mut, var | "this can vary" |
-| `me` | self, this | "myself" |
-| `say` | print | "say this" |
-| `yes`/`no` | true/false | natural booleans |
-| `and`/`or`/`not` | &&/\|\|/! | natural logic |
+1. **Explicit > Implicit** - No hidden behavior
+2. **Errors are values** - No exceptions, must handle
+3. **Null doesn't exist** - Use `maybe`, compiler enforces
+4. **Immutable by default** - Say `can change` for mutable
+5. **No hidden allocations** - Stack default, `on heap` explicit
+6. **One way to do things** - No overloading
+7. **Composition > Inheritance** - No classes, embed don't extend
+8. **Zero cost abstractions** - Generics compile to concrete types
+9. **Fail at compile time** - Strong typing, no implicit conversions
+10. **Readable > Clever** - Code reads like prose
 
 ---
 
-## Basics
-
-### Hello World
+## Variables
 
 ```flow
-do main:
-    say "Hello, World!"
-```
+// Immutable (default)
+name is "Flow"
+age is 25
+numbers are [1, 2, 3]
+pi is 3.14159
 
-### Variables
+// Mutable
+count is 0, can change
+count becomes 5
 
-```flow
-// Immutable by default (just assign)
-name = "Flow"
-age = 25
-pi = 3.14159
-
-// Mutable (can vary)
-vary count = 0
-count = count + 1
-
-// Type annotation (optional, usually inferred)
-score: int = 100
-```
-
-### Comments
-
-```flow
-// Single line
-
-/*
-   Multi-line
-   comment
-*/
+// Type inference, or explicit
+score is 100              // inferred as number
+name is "Bob" as text     // explicit
 ```
 
 ---
 
 ## Functions
 
-### Basic
-
 ```flow
-do greet(name):
-    say "Hello, " + name
+// Simple function
+to greet someone:
+    say "Hello, {someone}!"
 
-do add(a, b):
-    give a + b
-```
+// With return
+to add a and b:
+    return a + b
 
-### One-liners
+// Multiple parameters
+to calculate tax on amount at rate:
+    return amount * rate
 
-```flow
-do double(x) = x * 2
-do square(x) = x * x
-do adult?(age) = age >= 18
-```
-
-### With Types
-
-```flow
-do divide(a: int, b: int) -> try int:
-    if b == 0:
-        give fail("division by zero")
-    give good(a / b)
-```
-
-### Default Arguments
-
-```flow
-do greet(name, greeting = "Hello"):
-    say "#{greeting}, #{name}!"
-
-greet("World")           // Hello, World!
-greet("World", "Hi")     // Hi, World!
-```
-
-### Multiple Returns
-
-```flow
-do minmax(items):
-    give (items.min(), items.max())
-
-(lo, hi) = minmax([3, 1, 4, 1, 5])
+// Entry point
+to start:
+    greet "World"
+    result is add 2 and 3
+    say result
 ```
 
 ---
 
-## Types
-
-### Primitives
-
-| Flow | Description |
-|------|-------------|
-| `int` | Integer |
-| `float` | Floating point |
-| `str` | String |
-| `bool` | yes/no |
-| `byte` | Single byte |
-
-### Collections
-
-```flow
-// List
-items = [1, 2, 3, 4, 5]
-items: [int] = []
-
-// Map
-scores = {"alice": 100, "bob": 85}
-scores: {str: int} = {}
-
-// Set
-uniques = {1, 2, 3}
-```
-
-### Nothing and Maybe
-
-```flow
-// Nothing = absence of value
-result = nothing
-
-// Maybe = might have value
-do find(items, target) -> maybe int:
-    each i, item in items:
-        if item == target:
-            give some(i)
-    give nothing
-```
-
----
-
-## Things (Structs)
-
-### Definition
-
-```flow
-thing Point:
-    x: int
-    y: int
-
-thing Person:
-    name: str
-    age: int
-    email: maybe str    // optional field
-```
-
-### Short Form
-
-```flow
-thing Point(x: int, y: int)
-thing Color(r: byte, g: byte, b: byte)
-```
-
-### Methods
-
-```flow
-thing Circle:
-    x: int
-    y: int
-    radius: float
-
-    do area(me) = 3.14159 * me.radius * me.radius
-
-    do contains?(me, px, py):
-        dx = px - me.x
-        dy = py - me.y
-        give (dx*dx + dy*dy) <= me.radius * me.radius
-
-    do grow(me, factor):
-        me.radius = me.radius * factor
-```
-
-### Creation
-
-```flow
-p = Point(10, 20)
-c = Circle(0, 0, 5.0)
-
-// Named arguments
-person = Person(
-    name: "Alice",
-    age: 30,
-    email: some("alice@example.com")
-)
-```
-
----
-
-## Kinds (Enums)
-
-### Simple
-
-```flow
-kind Color:
-    Red
-    Green
-    Blue
-
-kind Direction:
-    Up
-    Down
-    Left
-    Right
-```
-
-### With Data
-
-```flow
-kind Status:
-    Pending
-    Running(progress: int)
-    Done(result: str)
-    Failed(error: str)
-
-kind Shape:
-    Circle(radius: float)
-    Rectangle(width: float, height: float)
-    Triangle(a: float, b: float, c: float)
-```
-
-### Usage
-
-```flow
-status = Status.Running(45)
-
-when status:
-    Pending => say "Waiting..."
-    Running(p) => say "Progress: #{p}%"
-    Done(r) => say "Result: #{r}"
-    Failed(e) => say "Error: #{e}"
-```
-
----
-
-## Control Flow
-
-### If / Else
+## Conditions
 
 ```flow
 if age >= 18:
-    say "adult"
-else:
-    say "minor"
+    say "Adult"
+otherwise:
+    say "Minor"
 
 // Chained
-if score >= 90:
-    say "A"
-else if score >= 80:
-    say "B"
-else if score >= 70:
-    say "C"
-else:
-    say "F"
+if score > 90:
+    say "Excellent"
+otherwise if score > 70:
+    say "Good"
+otherwise:
+    say "Keep trying"
 
-// As expression
-status = if online: "here" else: "away"
-```
+// Boolean logic (natural words)
+if logged in and is admin:
+    say "Full access"
 
-### When (Pattern Matching)
-
-```flow
-when value:
-    0 => say "zero"
-    1 => say "one"
-    2..10 => say "small"
-    _ => say "big"
-
-// With destructuring
-when point:
-    Point(0, 0) => say "origin"
-    Point(x, 0) => say "on x-axis at #{x}"
-    Point(0, y) => say "on y-axis at #{y}"
-    Point(x, y) => say "at #{x}, #{y}"
-
-// With guards
-when age:
-    n if n < 0 => say "invalid"
-    n if n < 18 => say "minor"
-    n if n < 65 => say "adult"
-    _ => say "senior"
-```
-
-### Pattern Matching in Functions
-
-```flow
-do factorial(0) = 1
-do factorial(n) = n * factorial(n - 1)
-
-do fib(0) = 0
-do fib(1) = 1
-do fib(n) = fib(n-1) + fib(n-2)
-
-do len([]) = 0
-do len([_, ...rest]) = 1 + len(rest)
+if not verified or expired:
+    say "Access denied"
 ```
 
 ---
 
 ## Loops
 
-### Each
-
 ```flow
-each item in items:
+// For each
+for each item in list:
     say item
 
-each i in 1..10:
+for each i in 1 to 10:
     say i
 
-each i in 1..=10:    // inclusive
-    say i
+// Repeat
+repeat 5 times:
+    say "hello"
 
-// With index
-each i, item in items:
-    say "#{i}: #{item}"
+// While
+while count < 10:
+    count becomes count + 1
 
-// With step
-each i in 0..100 by 10:
-    say i
-```
-
-### While
-
-```flow
-vary x = 10
-while x > 0:
-    say x
-    x = x - 1
-say "Boom!"
-```
-
-### Loop Control
-
-```flow
-each i in 1..100:
-    if i == 5:
-        skip        // continue
-    if i == 10:
-        stop        // break
-    say i
-```
-
-### Comprehensions
-
-```flow
-// List
-squares = [x*x each x in 1..10]
-evens = [x each x in items if x % 2 == 0]
-
-// Map
-scores = {name: score each (name, score) in results}
-
-// With transform
-names = [person.name.upper() each person in people if person.active]
+// Control
+for each n in numbers:
+    if n is 0:
+        skip            // continue
+    if n > 100:
+        stop            // break
+    say n
 ```
 
 ---
 
-## Pipes
+## Structs (Things)
 
 ```flow
-// Chain operations left to right
-result = data
-    |> parse
-    |> validate
-    |> transform
-    |> save
+// Define a thing
+a Person has:
+    name as text
+    age as number
 
-// vs nested calls
-result = save(transform(validate(parse(data))))
+// Create
+bob is a Person with name "Bob", age 30
 
-// With lambdas
-result = numbers
-    |> filter(x => x > 0)
-    |> map(x => x * 2)
-    |> sum()
+// Access
+say bob's name
+say bob's age
 
-// UFCS - these are equivalent
-items.filter(x => x > 0).map(double).sum()
-sum(map(filter(items, x => x > 0), double))
+// Update (if mutable)
+bob is a Person with name "Bob", age 30, can change
+bob's age becomes 31
+```
+
+---
+
+## Methods
+
+```flow
+a Person has:
+    name as text
+    age as number
+
+a Person can introduce:
+    say "I'm {my name}, {my age} years old"
+
+a Person can have birthday:
+    my age becomes my age + 1
+
+// Usage
+alice is a Person with name "Alice", age 25
+alice introduce
+alice have birthday
 ```
 
 ---
 
 ## Error Handling
 
-### Try and Fail
-
 ```flow
-do read_file(path) -> try str:
-    if not exists(path):
-        give fail("file not found: #{path}")
-    give good(read_contents(path))
+// Functions that can fail return result
+to open file at path:
+    // ... returns result or error
 
-do parse_int(s) -> try int:
-    // ... parsing logic
-    if invalid:
-        give fail("not a number")
-    give good(number)
-```
+// Handle errors naturally
+result is try open file at "data.txt"
 
-### Using Results
+if result failed:
+    say "Could not open: {result's error}"
+    return
 
-```flow
-when read_file("data.txt"):
-    good(content) => process(content)
-    fail(error) => say "Error: #{error}"
+// Use the value
+file is result's value
+process file
 
-// Or with ? propagation
-do load_config() -> try Config:
-    text = read_file("config.json")?    // propagates fail
-    data = parse_json(text)?
-    give good(Config.from(data))
-
-// Default values
-port = parse_int(env("PORT")) or 8080
-name = user.nickname or user.name or "Anonymous"
-```
-
-### Check (Guard Clauses)
-
-```flow
-do process(data):
-    check data.valid else give fail("invalid data")
-    check data.size < MAX else give fail("too large")
-    check user.authorized else give fail("not allowed")
-
-    // continue with valid data...
+// Or ignore error explicitly
+_ is try delete file at "temp.txt"
 ```
 
 ---
 
-## Concurrency
-
-### Start (Spawn)
+## Optionals (Maybe)
 
 ```flow
-// Start a task in background
-start expensive_calculation()
+// Maybe there's a value, maybe not
+user is maybe find user by id 42
 
-// Start and get handle
-task = start fetch(url)
-result = wait task
-```
+if user exists:
+    say user's name
+otherwise:
+    say "Not found"
 
-### Wait
+// With default
+name is user's name or "Anonymous"
 
-```flow
-// Wait for single task
-data = wait fetch(url)
-
-// Wait for all
-results = wait all(
-    fetch(url1),
-    fetch(url2),
-    fetch(url3)
-)
-
-// Wait for first
-first = wait any(
-    fetch(url1),
-    fetch(url2),
-    timeout(5s)
-)
-```
-
-### Pipes (Channels)
-
-```flow
-// Create pipe
-p = pipe<int>()
-
-// Send
-p <- 42
-
-// Receive
-value = <-p
-
-// In practice
-do producer(p):
-    each i in 1..100:
-        p <- i
-    close(p)
-
-do consumer(p):
-    each value in p:
-        say "Got: #{value}"
-
-do main:
-    p = pipe<int>()
-    start producer(p)
-    start consumer(p)
-    wait all_done()
-```
-
-### Parallel Operations
-
-```flow
-// Parallel map
-results = items |> parallel(process)
-
-// Parallel each
-parallel each url in urls:
-    fetch_and_save(url)
+// Chain maybes
+city is maybe user's address's city
 ```
 
 ---
 
-## Later (Defer)
+## Collections
 
 ```flow
-do process_file(path):
-    f = open(path)
-    later close(f)      // always runs at end
+// Lists
+numbers are [1, 2, 3, 4, 5]
+names are ["Alice", "Bob", "Carol"]
 
-    // work with f...
-    // close(f) called automatically
+// Access
+first is numbers at 0
+last is numbers at -1
 
-do transaction():
-    begin()
-    later if fail: rollback()
-    later if good: commit()
+// Add/remove (mutable)
+items are [], can change
+add "apple" to items
+remove "apple" from items
 
-    // operations...
+// Maps
+scores are {
+    "Alice": 95,
+    "Bob": 87
+}
+
+alice score is scores at "Alice"
 ```
 
 ---
 
-## Interfaces (Can)
+## Async
 
 ```flow
-// Define capability
-can Show:
-    do show(me) -> str
+// Wait for async operation
+data is wait fetch "https://api.com/data"
 
-can Compare:
-    do compare(me, other) -> int
+// Do multiple things together
+do together:
+    users is fetch "/users"
+    posts is fetch "/posts"
+    comments is fetch "/comments"
+then:
+    combine users, posts, comments
+```
 
-can Iterate<T>:
-    do next(me) -> maybe T
+---
 
-// Implement by having the methods
-thing Point:
-    x: int
-    y: int
+## Composition
 
-    do show(me) = "(#{me.x}, #{me.y})"
+```flow
+// Embed, don't inherit
+a Worker has:
+    person as Person     // embedded
+    job as text
+    salary as number
 
-// Point automatically "can Show"
+// Worker gets Person's fields
+w is a Worker with person (name "Bob", age 30), job "Engineer", salary 75000
+say w's person's name    // "Bob"
 
-// Use in function
-do print_all(items: [can Show]):
-    each item in items:
-        say item.show()
+// Interfaces (contracts)
+a Printable can:
+    print
+
+a Person can print:
+    say "{my name}, {my age}"
+
+a Worker can print:
+    say "{my person's name}: {my job}"
+
+// Use interface
+to display thing as Printable:
+    thing print
+```
+
+---
+
+## Memory
+
+```flow
+// Stack by default (fast, automatic cleanup)
+point is a Point with x 10, y 20
+
+// Heap when needed (explicit)
+buffer is a Buffer with size 1024, on heap
+
+// Ownership is clear
+data is load file                    // owns data
+process data                         // borrows data
+save data to "output.txt"           // borrows data
+// data freed here automatically
 ```
 
 ---
 
 ## Modules
 
-### Importing
-
 ```flow
-need json                    // standard library
-need http                    // standard library
-need myproject/utils         // local module
-need github.com/user/lib     // external
+// file: math.flow
+to add a and b:
+    return a + b
 
-// Selective
-need json: {parse, stringify}
-need http: {get, post}
+to multiply a and b:
+    return a * b
 
-// Aliased
-need very_long_name as short
-```
+// file: main.flow
+use math
 
-### Exporting
-
-```flow
-// In utils.flow
-
-// Public (exported)
-pub do helper():
-    // ...
-
-// Private (not exported)
-do internal():
-    // ...
-
-pub thing Config:
-    // ...
-```
-
----
-
-## Memory & Performance
-
-### Stack vs Heap
-
-```flow
-// Stack by default (fast)
-point = Point(1, 2)
-
-// Heap when needed (box)
-big_data = box [1, 2, 3, ... millions]
-
-// Reference
-do modify(ref point):
-    point.x = 10
-```
-
-### Inline Hints
-
-```flow
-@inline
-do tiny_function(x) = x + 1
-
-@noinline
-do big_function():
-    // ...
-```
-
-### Comptime
-
-```flow
-// Computed at compile time
-@comptime VERSION = "1.0.0"
-@comptime MAX_SIZE = 1024 * 1024
-
-@comptime do factorial(n):
-    if n <= 1: give 1
-    give n * factorial(n - 1)
-
-// Used at compile time
-LOOKUP_TABLE = @comptime [factorial(i) each i in 0..20]
+to start:
+    result is math add 2 and 3
+    say result
 ```
 
 ---
@@ -683,89 +320,69 @@ LOOKUP_TABLE = @comptime [factorial(i) each i in 0..20]
 ## Complete Example
 
 ```flow
-need http
-need json
+// A simple task manager
 
-thing Todo:
-    id: int
-    title: str
-    done: bool
+a Task has:
+    title as text
+    done as yes/no
 
-    do toggle(me):
-        me.done = not me.done
+a Task can toggle:
+    my done becomes not my done
 
-    do show(me):
-        mark = if me.done: "✓" else: "○"
-        give "#{mark} #{me.title}"
+a Task can display:
+    status is "x" if my done otherwise " "
+    say "[{status}] {my title}"
 
-do fetch_todos(url) -> try [Todo]:
-    response = wait http.get(url)?
-    data = json.parse(response.body)?
-    give good(data.as([Todo]))
+to start:
+    tasks are [], can change
 
-do main:
-    say "Fetching todos..."
+    add (a Task with title "Learn Flow", done no) to tasks
+    add (a Task with title "Build app", done no) to tasks
+    add (a Task with title "Deploy", done no) to tasks
 
-    when fetch_todos("https://api.example.com/todos"):
-        good(todos) =>
-            say "Found #{todos.len()} items:\n"
-            each todo in todos:
-                say todo.show()
+    // Complete first task
+    tasks at 0 toggle
 
-            // Count done
-            done = todos |> filter(t => t.done) |> len()
-            say "\n#{done}/#{todos.len()} completed"
+    say "My Tasks:"
+    for each task in tasks:
+        task display
+```
 
-        fail(e) =>
-            say "Failed: #{e}"
+Output:
+```
+My Tasks:
+[x] Learn Flow
+[ ] Build app
+[ ] Deploy
 ```
 
 ---
 
-## Quick Reference
+## Vocabulary Reference
 
-```
-╔══════════════════════════════════════════════════════════════╗
-║  FLOW CHEAT SHEET                                            ║
-╠══════════════════════════════════════════════════════════════╣
-║  do name(args):          define function                     ║
-║  do name(x) = expr       one-liner function                  ║
-║  thing Name: ...         define struct                       ║
-║  kind Name: ...          define enum                         ║
-║  when x: ...             pattern match                       ║
-║  each x in items:        loop                                ║
-║  if/else                 condition                           ║
-║  give value              return                              ║
-║  need module             import                              ║
-║  start task()            spawn async                         ║
-║  wait task               await result                        ║
-║  pipe<T>()               create channel                      ║
-║  later action()          defer to end                        ║
-║  try/good/fail           error handling                      ║
-║  x?                      propagate error                     ║
-║  x or default            default if nothing/fail             ║
-║  can Name: ...           interface                           ║
-║  x |> f |> g             pipe chain                          ║
-║  [x each x in l]         list comprehension                  ║
-║  yes/no                  booleans                            ║
-║  and/or/not              logic operators                     ║
-║  vary x = val            mutable variable                    ║
-║  say "text"              print                               ║
-║  check cond else ...     guard clause                        ║
-║  me.field                self reference                      ║
-║  nothing/some(x)         optional values                     ║
-╚══════════════════════════════════════════════════════════════╝
-```
-
----
-
-## Design Principles
-
-1. **Words over symbols** - `and` not `&&`, `or` not `||`
-2. **Obvious names** - `thing` not `struct`, `when` not `match`
-3. **Inference by default** - types optional unless ambiguous
-4. **Immutable by default** - explicit `vary` for mutation
-5. **Expression everything** - if/when/blocks return values
-6. **Errors are values** - no exceptions, explicit handling
-7. **Concurrency is easy** - `start`/`wait`/`pipe`
-8. **Zero cost abstractions** - compiles to efficient C++
+| Flow | Meaning | C++ |
+|------|---------|-----|
+| `is` | assignment | `=` |
+| `becomes` | reassignment | `=` |
+| `can change` | mutable | `mut` |
+| `to ... :` | function | `fn` |
+| `return` | return value | `return` |
+| `a X has:` | struct | `struct` |
+| `a X can Y:` | method | member fn |
+| `if/otherwise` | conditional | `if/else` |
+| `for each` | iteration | `for` |
+| `repeat N times` | counted loop | `for` |
+| `while` | while loop | `while` |
+| `skip` | continue | `continue` |
+| `stop` | break | `break` |
+| `and/or/not` | logic | `&&/\|\|/!` |
+| `yes/no` | booleans | `true/false` |
+| `try` | fallible call | result type |
+| `maybe` | optional | `optional` |
+| `wait` | async | `co_await` |
+| `do together` | concurrent | async spawn |
+| `say` | print | `cout` |
+| `my` | self reference | `this->` |
+| `'s` | member access | `.` |
+| `at` | index access | `[]` |
+| `on heap` | heap alloc | `new` |

@@ -1,14 +1,14 @@
 // greeting.flow - Functions and string interpolation
 
-do greet(name):
-    say "Hello, #{name}!"
+to greet someone:
+    say "Hello, {someone}!"
 
-do greet_age(name, age):
-    say "#{name} is #{age} years old"
+to greet with age name and years:
+    say "{name} is {years} years old"
 
-do main:
-    greet("World")
-    greet("Flow")
+to start:
+    greet "World"
+    greet "Flow"
 
-    greet_age("Alice", 30)
-    greet_age("Bob", 25)
+    greet with age "Alice" and 30
+    greet with age "Bob" and 25

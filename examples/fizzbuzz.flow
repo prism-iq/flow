@@ -1,12 +1,12 @@
 // fizzbuzz.flow - Classic FizzBuzz
 
-do main:
-    each i in 1..=30:
-        if i % 15 == 0:
+to start:
+    for each i in 1 to 30:
+        if i % 15 is 0:
             say "FizzBuzz"
-        else if i % 3 == 0:
+        otherwise if i % 3 is 0:
             say "Fizz"
-        else if i % 5 == 0:
+        otherwise if i % 5 is 0:
             say "Buzz"
-        else:
+        otherwise:
             say i
