@@ -1,6 +1,6 @@
 # Claude Context - Flow Programming Language
 
-**Version:** 0.3.0
+**Version:** 0.4.0 (Full Local - No API)
 **Repository:** https://github.com/prism-iq/flow
 
 ---

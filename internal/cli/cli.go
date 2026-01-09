@@ -6,12 +6,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"flow/internal/codegen"
 	"flow/internal/compiler"
 	"flow/internal/config"
-	"flow/internal/transpiler"
+	"flow/internal/parser"
 )
 
-const version = "0.1.0"
+const version = "0.4.0"
 
 func Execute() error {
 	if len(os.Args) < 2 {
@@ -43,20 +44,19 @@ func Execute() error {
 }
 
 func printUsage() error {
-	fmt.Println(`Flow - Simple syntax, powerful output.
+	fmt.Println(`Flow - Human syntax, native performance.
 
 Usage:
   flow <command> [arguments]
 
 Commands:
-  run <file.flow>     Transpile, compile, and run
-  build <file.flow>   Transpile and compile (creates binary)
+  run <file.flow>     Parse, compile, and run
+  build <file.flow>   Parse and compile (creates binary)
   show <file.flow>    Show generated C++ code
 
 Options:
   --keep              Keep intermediate files (.cpp)
   --debug             Show debug output
-  --no-cache          Disable cache
 
 Examples:
   flow run hello.flow
@@ -64,12 +64,11 @@ Examples:
   flow show hello.flow
 
 Environment:
-  ANTHROPIC_API_KEY   Claude API key (required)
   FLOW_COMPILER       C++ compiler (default: g++)
   FLOW_STD            C++ standard (default: c++17)
   FLOW_DEBUG          Enable debug output
 
-Version: ` + version)
+Version: ` + version + ` (fully local, no API)`)
 	return nil
 }
 
@@ -96,11 +95,16 @@ func runCmd() error {
 		return fmt.Errorf("cannot read file: %w", err)
 	}
 
-	// Transpile to C++
-	t := transpiler.New(cfg)
-	cppCode, err := t.Transpile(string(source), filename)
+	// Parse Flow
+	ast, err := parser.Parse(string(source))
 	if err != nil {
-		return fmt.Errorf("transpilation failed: %w", err)
+		return fmt.Errorf("parse error: %w", err)
+	}
+
+	// Generate C++
+	cppCode, err := codegen.GenerateCode(ast)
+	if err != nil {
+		return fmt.Errorf("codegen error: %w", err)
 	}
 
 	if cfg.Debug || opts.debug {
@@ -139,11 +143,16 @@ func buildCmd() error {
 		return fmt.Errorf("cannot read file: %w", err)
 	}
 
-	// Transpile to C++
-	t := transpiler.New(cfg)
-	cppCode, err := t.Transpile(string(source), filename)
+	// Parse Flow
+	ast, err := parser.Parse(string(source))
 	if err != nil {
-		return fmt.Errorf("transpilation failed: %w", err)
+		return fmt.Errorf("parse error: %w", err)
+	}
+
+	// Generate C++
+	cppCode, err := codegen.GenerateCode(ast)
+	if err != nil {
+		return fmt.Errorf("codegen error: %w", err)
 	}
 
 	// Compile to binary
@@ -164,22 +173,22 @@ func showCmd() error {
 
 	filename := os.Args[2]
 
-	cfg, err := config.Load()
-	if err != nil {
-		return fmt.Errorf("config error: %w", err)
-	}
-
 	// Read Flow source
 	source, err := os.ReadFile(filename)
 	if err != nil {
 		return fmt.Errorf("cannot read file: %w", err)
 	}
 
-	// Transpile to C++
-	t := transpiler.New(cfg)
-	cppCode, err := t.Transpile(string(source), filename)
+	// Parse Flow
+	ast, err := parser.Parse(string(source))
 	if err != nil {
-		return fmt.Errorf("transpilation failed: %w", err)
+		return fmt.Errorf("parse error: %w", err)
+	}
+
+	// Generate C++
+	cppCode, err := codegen.GenerateCode(ast)
+	if err != nil {
+		return fmt.Errorf("codegen error: %w", err)
 	}
 
 	// Get base name without extension
@@ -193,9 +202,8 @@ func showCmd() error {
 }
 
 type options struct {
-	keep    bool
-	debug   bool
-	noCache bool
+	keep  bool
+	debug bool
 }
 
 func parseOptions(args []string) options {
@@ -206,8 +214,6 @@ func parseOptions(args []string) options {
 			opts.keep = true
 		case "--debug":
 			opts.debug = true
-		case "--no-cache":
-			opts.noCache = true
 		}
 	}
 	return opts

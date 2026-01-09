@@ -1,14 +1,9 @@
 // greeting.flow - Functions and string interpolation
 
-to greet someone:
-    say "Hello, {someone}!"
-
-to greet with age name and years:
-    say "{name} is {years} years old"
+to greet name:
+    say name
 
 to start:
+    say "Hello!"
     greet "World"
     greet "Flow"
-
-    greet with age "Alice" and 30
-    greet with age "Bob" and 25
