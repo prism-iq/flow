@@ -1,0 +1,71 @@
+// PULSE - Heartbeat daemon in Flow
+// The first real daemon written in Flow for Rhapsody
+
+to get_cpu:
+    raw is run "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'"
+    return trim raw
+
+to get_mem:
+    raw is run "free -m | grep Mem | awk '{print $3\" MB / \"$2\" MB\"}'"
+    return trim raw
+
+to get_load:
+    raw is run "cut -d' ' -f1-3 /proc/loadavg"
+    return trim raw
+
+to get_uptime:
+    raw is run "uptime -p"
+    return trim raw
+
+to check_daemon name:
+    cmd is "systemctl is-active " + name + " 2>/dev/null || echo dead"
+    result is run cmd
+    status is trim result
+    if status == "active":
+        return "alive"
+    return "dead"
+
+to start:
+    say "PULSE - Flow Heartbeat Daemon"
+    say "=============================="
+    say "Compiled from Flow to C++ to native binary"
+    say ""
+    say "---[ PULSE ]---"
+
+    timestamp is run "date '+%Y-%m-%d %H:%M:%S'"
+    say "Time: {timestamp}"
+
+    cpu is get_cpu
+    mem is get_mem
+    load is get_load
+    up is get_uptime
+
+    say "CPU:    {cpu}"
+    say "Memory: {mem}"
+    say "Load:   {load}"
+    say "Uptime: {up}"
+    say ""
+
+    say "Daemons:"
+
+    god is check_daemon "god.service"
+    say "  god:        {god}"
+
+    nyx is check_daemon "nyx.service"
+    say "  nyx:        {nyx}"
+
+    leonardo is check_daemon "leonardo.service"
+    say "  leonardo:   {leonardo}"
+
+    anima is check_daemon "anima.service"
+    say "  anima:      {anima}"
+
+    omniscient is check_daemon "omniscient.service"
+    say "  omniscient: {omniscient}"
+
+    say ""
+
+    state is timestamp + "|cpu:" + cpu + "|mem:" + mem + "|load:" + load
+    write state to "/tmp/pulse.state"
+
+    say "State written to /tmp/pulse.state"
