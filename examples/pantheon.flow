@@ -1,0 +1,8 @@
+// Pantheon Integration - Flow talks to Leonardo
+
+to start:
+    say "Flow <-> Pantheon Bridge"
+    say "========================"
+    
+    response is run "cd ~/projects/good-girl && python talk.py 'Salut Leonardo, Flow te parle'"
+    say response
